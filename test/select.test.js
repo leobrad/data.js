@@ -15,4 +15,12 @@ describe('[class] Users select test case;', () => {
     const users = await global.user.tb.select([4 , 5], ['name', 'age']);
     expect(JSON.stringify(users)).toMatch('[{\"name\":\"joseph\",\"age\":23},{\"name\":\"william\",\"age\":33}]');
   });
+  test('select third arbitrarliy records;', async () => {
+    const users = await global.user.tb.select([7 , 10], ['name', 'age']);
+    expect(JSON.stringify(users)).toMatch('[{\"name\":\"george\",\"age\":23},{\"name\":\"alexander\",\"age\":25},{\"name\":\"john\",\"age\":25},{\"name\":\"taylor\",\"age\":23}]');
+  });
+  test('select arbitrarliy interspersed records;', async () => {
+    const users = await global.user.tb.select([1 , 6], ['name', 'age']);
+    expect(JSON.stringify(users)).toMatch('[{\"name\":\"george\",\"age\":23},{\"name\":\"alexander\",\"age\":25},{\"name\":\"john\",\"age\":25},{\"name\":\"taylor\",\"age\":23}]');
+  });
 });

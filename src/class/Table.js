@@ -11,7 +11,7 @@ const {
 } = global;
 
 function radixSort(list) {
-  list = list.map((e) => [e, e]);
+  list = list.map((e) => [e[0], e]);
   const bucket = new Array(10);
   while (true) {
     for (let i = 0; i < bucket.length; i += 1) {
@@ -48,7 +48,7 @@ function radixSort(list) {
   for (let i = 0; i < bucket.length; i += 1) {
     if (Array.isArray(bucket[9 - i])) {
       bucket[9 - i].forEach((e) => {
-        ans.push(list[e][1]);
+        ans.unshift(list[e][1]);
       });
     }
   }
@@ -210,41 +210,45 @@ class Table {
             const f = hash[k][j];
             await this.cacheSections(sections, datas, f);
           }
-        } else if (k === '*rest') {
+        } else if (k === '*rest' && hash[k] === undefined) {
           for (let j = 0; j < hash[k].length; j += 1) {
             const f = hash[k][j];
             if (!source[f]) {
-              const s = this.calcSections(section, datas, f);
+              const sections = this.calcSections(section, datas, f);
               await this.cacheSections(sections, datas, f);
             }
           }
         } else {
-          if (source[this.hash[hash[k][0]].pointer] === undefined) {
-            hash[k][0] = {
-              type: 's',
-              jumps: [],
-              sections: [],
-              chaotic: false,
-            };
-            for (let j = 1; j < hash[k].length; j += 1) {
-              hash[k][j] = {
-                type: 'p',
-                pointer: hash[k][0],
+          if (k !== '*rest' && source[this.hash[hash[k][0]].pointer] === undefined) {
+            if (k === '*rest') {
+              hash[k][0] = {
+                type: 's',
+                jumps: [],
+                sections: [],
+                chaotic: false,
               };
-            }
-            const sections = this.calcSections(section, datas, hash[k][0]);
-            this.cacheSections(sections, datas, s);
-            for (let j = 0; j < hash[k].length; j += 1) {
-              const f = hash[k][j];
-              await this.cacheSections(sections, datas, f);
+              for (let j = 0; j < hash[k].length; j += 1) {
+                hash[k][j] = {
+                  type: 'p',
+                  pointer: hash[k][0],
+                };
+              }
+              const sections = this.calcSections(section, datas, hash[k][0]);
+              await this.cacheSections(sections, datas, hash[k][0]);
+              for (let j =0; j < hash[k].length; j += 1) {
+                const f = hash[k][j];
+                await this.cacheSections(sections, datas, f);
+              }
             }
           } else {
-            const s = this.hash[hash[k][0]].pointer;
-            const sections = this.calcSections(section, datas, s);
-            this.cacheSections(sections, datas, s, section);
-            for (let j = 0; j < hash[k].length; j += 1) {
-              const f = hash[k][j];
-              await this.cacheSections(sections, datas, f);
+            if (k !== '*rest') {
+              const s = this.hash[hash[k][0]].pointer;
+              const sections = this.calcSections(section, datas, s);
+              await this.cacheSections(sections, datas, s);
+              for (let j = 0; j < hash[k].length; j += 1) {
+                const f = hash[k][j];
+                await this.cacheSections(sections, datas, f);
+              }
             }
           }
         }
@@ -259,7 +263,8 @@ class Table {
     const ans = [];
     let pointer = -1;
     let status = 0;
-    let start;
+    let start = index;
+    // @TODO
     while (index <= right) {
       if (datas[index] === undefined || datas[index][filter] === undefined) {
         status = 0;
@@ -267,14 +272,13 @@ class Table {
         if (sections.length === 0) {
           sections.push(section);
           ans.push(section);
-          this.hash[filter].chaotic = true;
           const [l, r] = section;
           this.hash[filter].jumps[l] = r;
           return ans;
         }
         this.concatSections(filter);
         for (let i = pointer; i <= sections.length; i += 1) {
-          if (section[i] === undefined) {
+          if (sections[i] === undefined) {
             if (sections[i + 1] !== undefined) {
               if (index < sections[i + 1][0]) {
                 pointer = 0;
@@ -283,6 +287,7 @@ class Table {
                 ans.push(section);
                 sections.push(section);
                 this.hash[filter].chaotic = true;
+                break;
               }
             }
             continue;
@@ -290,47 +295,53 @@ class Table {
           if (sections[i + 1] === undefined) {
             if (index > sections[i][1]) {
               pointer = sections.length - 1;
-              pointer = right;
               const section = [index, right];
               ans.push(section);
               sections.push(section);
+              jumps[start] = section[1];
               this.hash[filter].chaotic = true;
               return ans;
             }
+            return ans;
           }
           const [l1, r1] = sections[i];
           const [l2, r2] = sections[i + 1];
           if (index > r1 && index < l2) {
-            pointer = l1;
-            index = l1;
-            const section = [index, l1];
+            pointer = i;
+            if (l2 <= right) {
+              index = l2;
+            }
+            const section = [index, l2];
             ans.push(section);
             sections.push(section);
             this.hash[filter].chaotic = true;
+            break;
           }
           start = index;
           this.hash[filter][start] = undefined;
         }
       } else {
         status = 1;
-        const { jumps, } = this.hash[filter];
-        if (jumps[i] !== undefined) {
-          index = jumps[i];
+        const { jumps, sections, } = this.hash[filter];
+        if (jumps[index] !== undefined) {
+          index = jumps[index];
           for (let i = pointer; i < sections.length; i += 1) {
-            if (section[0] === i) {
+            if (sections[0] === i) {
               sections.splice(i, 1);
-              pointer = section[i + 1][0];
+              pointer = i + 1;
               break;
             }
           }
         } else {
           this.concatSections(filter);
           for (let i = pointer; i < sections.length; i += 1) {
-            const [l, r] = sections[i];
-            if (index >= l && index <= r) {
-              pointer = sections[i + 1][0];
-              index = r + 1;
-              break;
+            if (sections[i] !== undefined) {
+              const [l, r] = sections[i];
+              if (index >= l && index <= r) {
+                pointer = i;
+                index = r + 1;
+                break;
+              }
             }
           }
         }
