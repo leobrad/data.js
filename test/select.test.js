@@ -21,6 +21,6 @@ describe('[class] Users select test case;', () => {
   });
   test('select arbitrarliy interspersed records;', async () => {
     const users = await global.user.tb.select([1 , 6], ['name', 'age']);
-    expect(JSON.stringify(users)).toMatch('[{\"name\":\"george\",\"age\":23},{\"name\":\"alexander\",\"age\":25},{\"name\":\"john\",\"age\":25},{\"name\":\"taylor\",\"age\":23}]');
+    expect(JSON.stringify(users)).toMatch('[{\"name\":\"ovlier\",\"age\":22},{\"name\":\"thomas\",\"age\":23},{\"name\":\"david\",\"age\":32},{\"name\":\"joseph\",\"age\":23},{\"name\":\"william\",\"age\":33},{\"name\":\"michael\",\"age\":53}]');
   });
 });

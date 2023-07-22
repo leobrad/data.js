@@ -264,7 +264,6 @@ class Table {
     let pointer = -1;
     let status = 0;
     let start = index;
-    // @TODO
     while (index <= right) {
       if (datas[index] === undefined || datas[index][filter] === undefined) {
         status = 0;
@@ -297,7 +296,7 @@ class Table {
               pointer = sections.length - 1;
               const section = [index, right];
               ans.push(section);
-              sections.push(section);
+              this.hash[filter].sections.push(section);
               jumps[start] = section[1];
               this.hash[filter].chaotic = true;
               return ans;
@@ -308,17 +307,17 @@ class Table {
           const [l2, r2] = sections[i + 1];
           if (index > r1 && index < l2) {
             pointer = i;
+            const section = [index, l2];
             if (l2 <= right) {
               index = l2;
             }
-            const section = [index, l2];
             ans.push(section);
             sections.push(section);
             this.hash[filter].chaotic = true;
             break;
           }
           start = index;
-          this.hash[filter][start] = undefined;
+          jumps[start] = undefined;
         }
       } else {
         status = 1;
