@@ -176,10 +176,11 @@ class Table {
           }
           hash['*null'].push(f);
         } else if (this.hash[f].type === 'p') {
-          if (hash[f] === undefined) {
-            hash[f] = [];
+          const pointer = this.hash[f].pointer;
+          if (hash[pointer] === undefined) {
+            hash[pointer] = [];
           }
-          hash[f].push(f);
+          hash[pointer].push(f);
         } else {
           if (hash['*rest'] === undefined) {
             hash['*rest'] = [];
@@ -211,24 +212,24 @@ class Table {
             const f = hash[k][j];
             await this.cacheSections(sections, datas, f);
           }
-        } else if (k === '*rest' && hash[k] === undefined) {
+        } else if (k === '*rest') {
           for (let j = 0; j < hash[k].length; j += 1) {
             const f = hash[k][j];
-            if (!source[f]) {
+            if (hash[f] === undefined) {
               const sections = this.calcSections(section, datas, f);
               await this.cacheSections(sections, datas, f);
             }
           }
         } else {
           if (k !== '*rest' && source[this.hash[hash[k][0]].pointer] === undefined) {
-            hash[k][0] = {
+            this.hash[hash[k][0]] = {
               type: 's',
               jumps: [],
               sections: [],
               chaotic: false,
             };
-            for (let j = 0; j < hash[k].length; j += 1) {
-              hash[k][j] = {
+            for (let j = 1; j < hash[k].length; j += 1) {
+              this.hash[hash[k][j]] = {
                 type: 'p',
                 pointer: hash[k][0],
               };
@@ -323,10 +324,12 @@ class Table {
         const { jumps, sections, } = this.hash[filter];
         if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
           for (let i = pointer; i < sections.length; i += 1) {
-            if (index <= sections[i][0]) {
-              sections.splice(i, 1);
-              pointer = i + 1;
-              break;
+            if (sections[i] !== undefined) {
+              if (index <= sections[i][0]) {
+                sections.splice(i, 1);
+                pointer = i + 1;
+                break;
+              }
             }
           }
           index = jumps[index] + 1;
