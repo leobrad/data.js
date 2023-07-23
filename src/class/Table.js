@@ -266,7 +266,7 @@ class Table {
     while (index <= right) {
       if (datas[index] === undefined || datas[index][filter] === undefined) {
         status = 0;
-        const { jumps, sections, } = this.hash[filter];
+        let { jumps, sections, } = this.hash[filter];
         if (sections.length === 0) {
           sections.push(section);
           ans.push(section);
@@ -321,19 +321,18 @@ class Table {
       } else {
         status = 1;
         const { jumps, sections, } = this.hash[filter];
-        if (jumps[index] !== undefined) {
-          if (datas[index - 1] === undefined || datas[index - 1][filter === undefined]) {
-            for (let i = pointer; i < sections.length; i += 1) {
-              if (index <= sections[i][0]) {
-                sections.splice(i, 1);
-                pointer = i + 1;
-                break;
-              }
+        if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
+          for (let i = pointer; i < sections.length; i += 1) {
+            if (index <= sections[i][0]) {
+              sections.splice(i, 1);
+              pointer = i + 1;
+              break;
             }
-            index = jumps[index] + 1;
           }
+          index = jumps[index] + 1;
         } else {
           this.concatSections(filter);
+          const sections = this.hash[filter].sections;
           for (let i = pointer; i < sections.length; i += 1) {
             if (sections[i] !== undefined) {
               const [l, r] = sections[i];
