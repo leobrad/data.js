@@ -10,21 +10,19 @@ const {
   },
 } = global;
 
-function shadowCopyRecord(l, r, o, ans, records) {
+function shadowCopyRecord(l, r, o, ans, datas) {
   for (let i = l; i <= r; i += 1) {
-    ans[i - o] = records[i - l1];
+    ans[i - o] = datas[i];
   }
 }
 
-function deepCopyRecord(l, r, o, ans, records, hash, filters) {
+function deepCopyRecord(l, r, o, ans, datas, filters) {
   for (let i = l; i <= r; i += 1) {
-    if (ans[i] === undefined) {
+    if (ans[i - o] === undefined) {
       ans[i - o] = {};
     }
     filters.forEach((f) => {
-      if (hash[f] === true) {
-        ans[i - o][f] = r[f];
-      }
+      ans[i - o][f] = datas[i][f];
     });
   }
 }
@@ -142,7 +140,7 @@ class Table {
     }
   }
 
-  arrangeRecords(records, section, filters) {
+  arrangeRecords(datas, section, filters) {
     const hash = {};
     const ans = [];
     filters.forEach((f) => {
@@ -161,32 +159,44 @@ class Table {
     let intersections = [];
     const [l1, r1] = section;
     Object.keys(min).forEach((k) => {
+      this.concatSections(k);
       const { sections, } = this.hash[k];
       sections.forEach((s) => {
         const [l2, r2] = s;
         if (!(r2 < l1 || l2 > r1)) {
           const min = Math.min(r1, r2);
           const max = Math.max(l1, l2);
-          intersections.push([min, max]);
+          intersections.push([max, min]);
         }
       });
     });
     intersections = radixSort(intersections);
     intersections = concatSections(intersections);
-    const left = intersections[0][0];
-    if (left > l1) {
-      shadowCopyRecord(left, l1 - 1, l1, ans, records);
-    }
-    for (let i = 0; i < intersections.length - 1; i += 1) {
-      const [l3, r3] = intersections[i];
-      const [l4, r4] = intersections[i + 1];
-      deepCopyRecord(l3, r3, l1, ans, records, hash, filters);
-      deepCopyRecord(l4, r4, l1, ans, records, hash, filters);
-      shadowCopyRecord(r3 + 1, l4 - 1, l1, ans, records);
-    }
-    const right = intersections[intersections.length - 1][1];
-    if (right < l1) {
-      deepCopyRecord(right + 1, l1, l1, ans, records, hash, filters);
+    if (intersections.length === 1) {
+      const [l3, r3]= intersections[0];
+      if (l3 > l1) {
+        shadowCopyRecord(l1, l3 - 1, l1, ans, datas);
+      }
+      deepCopyRecord(l3, r3, l1, ans, datas, filters);
+      if (r3 < r1) {
+        shadowCopyRecord(r3 + 1, r1, l1, ans, datas);
+      }
+    } else {
+      const left = intersections[0][0];
+      if (left > l1) {
+        shadowCopyRecord(left, l1 - 1, l1, ans, datas);
+      }
+      for (let i = 0; i < intersections.length - 1; i += 1) {
+        const [l3, r3] = intersections[i];
+        const [l4, r4] = intersections[i + 1];
+        deepCopyRecord(l3, r3, l1, ans, datas, filters);
+        deepCopyRecord(l4, r4, l1, ans, datas, filters);
+        shadowCopyRecord(r3 + 1, l4 - 1, l1, ans, datas);
+      }
+      const right = intersections[intersections.length - 1][1];
+      if (right < l1) {
+        deepCopyRecord(right + 1, l1, l1, ans, datas, filters);
+      }
     }
     return ans;
   }
@@ -341,7 +351,7 @@ class Table {
       }
       records = datas.slice(section[0], section[1] + 1)
       if (arrange === true) {
-        records = this.arrangeRecords(records, section, filters);
+        records = this.arrangeRecords(datas, section, filters);
       }
     }
     return records;
@@ -366,22 +376,22 @@ class Table {
         }
         this.concatSections(filter);
         for (let i = pointer; i <= sections.length; i += 1) {
-          if (sections[i] === undefined) {
+          if (i <= -1 && sections[i] === undefined) {
             if (sections[i + 1] !== undefined) {
               if (index < sections[i + 1][0]) {
                 pointer = 0;
-                index = sections[i + 1][0];
                 const section = [index, sections[i + 1][0]];
                 ans.push(section);
                 sections.push(section);
+                index = sections[i + 1][0];
                 this.hash[filter].chaotic = true;
                 break;
               }
             }
             continue;
           }
-          if (sections[i + 1] === undefined) {
-            if (index > sections[i][1]) {
+          if (i >= sections.length - 1 && sections[i + 1] === undefined) {
+            if (sections[i] === undefined || index > sections[i][1]) {
               pointer = sections.length - 1;
               const section = [start, right];
               ans.push(section);
