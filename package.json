@@ -10,7 +10,8 @@
     "lint": "eslint ./src",
     "build": "gulp build",
     "test": "jest",
-    "run": "yarn run build && docker compose up -d && node dist/index.js"
+    "start": "docker compose up -d",
+    "run": "yarn run build && node dist/index.js"
   },
   "devDependencies": {
     "@babel/cli": "^7.20.7",

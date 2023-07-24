@@ -10,6 +10,43 @@ const {
   },
 } = global;
 
+function shadowCopyRecord(l, r, o, ans, records) {
+  for (let i = l; i <= r; i += 1) {
+    ans[i - o] = records[i - l1];
+  }
+}
+
+function deepCopyRecord(l, r, o, ans, records, hash, filters) {
+  for (let i = l; i <= r; i += 1) {
+    if (ans[i] === undefined) {
+      ans[i - o] = {};
+    }
+    filters.forEach((f) => {
+      if (hash[f] === true) {
+        ans[i - o][f] = r[f];
+      }
+    });
+  }
+}
+
+function concatSections(sections) {
+  let status = 0;
+  let i = 0;
+  while (sections[i + 1] !== undefined) {
+    const [l1, r1] = sections[i];
+    const [l2, r2] = sections[i + 1];
+    if (r1 >= l2 - 1) {
+      const min = Math.min(l1, l2);
+      const max = Math.max(r1, r2);
+      sections.splice(i, 2, [min, max]);
+    } else {
+      i += 1;
+    }
+  }
+  return sections;
+}
+
+
 function radixSort(list) {
   list = list.map((e) => [e[0], e]);
   const bucket = new Array(10);
@@ -105,6 +142,55 @@ class Table {
     }
   }
 
+  arrangeRecords(records, section, filters) {
+    const hash = {};
+    const ans = [];
+    filters.forEach((f) => {
+      hash[f] = true;
+    });
+    const min = {};
+    Object.keys(this.hash).forEach((k) => {
+      if (hash[k] === undefined) {
+        if (this.hash[k].type === 's') {
+          min[k] = true;
+        } else {
+          min[this.hash[k].pointer] = true;
+        }
+      }
+    });
+    let intersections = [];
+    const [l1, r1] = section;
+    Object.keys(min).forEach((k) => {
+      const { sections, } = this.hash[k];
+      sections.forEach((s) => {
+        const [l2, r2] = s;
+        if (!(r2 < l1 || l2 > r1)) {
+          const min = Math.min(r1, r2);
+          const max = Math.max(l1, l2);
+          intersections.push([min, max]);
+        }
+      });
+    });
+    intersections = radixSort(intersections);
+    intersections = concatSections(intersections);
+    const left = intersections[0][0];
+    if (left > l1) {
+      shadowCopyRecord(left, l1 - 1, l1, ans, records);
+    }
+    for (let i = 0; i < intersections.length - 1; i += 1) {
+      const [l3, r3] = intersections[i];
+      const [l4, r4] = intersections[i + 1];
+      deepCopyRecord(l3, r3, l1, ans, records, hash, filters);
+      deepCopyRecord(l4, r4, l1, ans, records, hash, filters);
+      shadowCopyRecord(r3 + 1, l4 - 1, l1, ans, records);
+    }
+    const right = intersections[intersections.length - 1][1];
+    if (right < l1) {
+      deepCopyRecord(right + 1, l1, l1, ans, records, hash, filters);
+    }
+    return ans;
+  }
+
   async insert(message) {
     const { tb, } = this;
     await insertRecord(tb, message);
@@ -161,7 +247,7 @@ class Table {
     this.deleteKeySections(message.id);
   }
 
-  async select(section, filters) {
+  async select(section, filters, arrange) {
     const { datas, tb, } = this;
     let records;
     if (section === undefined) {
@@ -254,6 +340,9 @@ class Table {
         }
       }
       records = datas.slice(section[0], section[1] + 1)
+      if (arrange === true) {
+        records = this.arrangeRecords(records, section, filters);
+      }
     }
     return records;
   }
