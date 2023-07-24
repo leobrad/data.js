@@ -9,6 +9,7 @@ const {
 export default function deleteData(table, id) {
   return new Promise((resolve, reject) => {
     const sql = 'DELETE FROM ' + table + ' WHERE id=' + id;
+    console.log(sql);
     connection.query(sql, (err, results) => {
         if (err) {
           reject(err);

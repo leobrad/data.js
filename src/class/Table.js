@@ -260,8 +260,8 @@ class Table {
   async select(section, filters, arrange) {
     const { datas, tb, } = this;
     let records;
-    if (section === undefined) {
-      records = await selectRecord(tb, undefined, filters);
+    if (filters === undefined) {
+      records = await selectRecord(tb, section);
     } else {
       const hash = {};
       const source = {};

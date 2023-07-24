@@ -24,7 +24,7 @@ INSERT INTO `user` (`id`, `name`, `age`, `gender`, `city`, `country`) VALUES
 (3,	'thomas',	23,	1,	'florence',	'america'),
 (4,	'david',	32,	1,	'walpi',	'america'),
 (5,	'joseph',	23,	1,	'winslow',	'america'),
-(6,	'william',	33,	1,	'Helena',	'america'),
+(6,	'william',	33,	1,	'helena',	'america'),
 (7,	'michael',	53,	1,	'morrilton',	'america'),
 (8,	'george',	23,	1,	'arcadia',	'america'),
 (9,	'alexander',	25,	1,	'coronado',	'america'),
@@ -33,6 +33,6 @@ INSERT INTO `user` (`id`, `name`, `age`, `gender`, `city`, `country`) VALUES
 (12,	'emily',	23,	0,	'fremont',	'america'),
 (13,	'emma',	23,	0,	'fullerton',	'america'),
 (14,	'particia',	24,	1,	'irvine',	'america'),
-(15,	'elizebeth',	52,	0,	'lompoc',	'america');
+(15,	'elizebeth',	52,	1,	'lompoc',	'america');
 
--- 2023-07-20 09:09:50
+-- 2023-07-24 13:55:28
