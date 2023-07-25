@@ -241,10 +241,9 @@ class Table {
             sections[i] = [l, r - 1];
           }
           if (id > l && id < r) {
-            sections.splice(i, 1);
-            sections.push([l, id - 1]);
-            sections.push([id + 1, r]);
-            hash[k].chaotic = true;
+            sections.splice(i, 1, [l, id - 1], [id + 1, r]);
+            jumps[l] = id - 1;
+            jumps[id + 1] = r;
           }
         });
       });
