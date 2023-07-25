@@ -231,7 +231,7 @@ class Table {
     const { hash, datas, } = this;
     if (datas[id] !== undefined) {
       Object.keys(datas[id]).forEach((k) => {
-        const { sections, } = hash[k];
+        const { sections, jumps, } = hash[k];
         sections.forEach((s, i) => {
           const [l, r] = s;
           if (id === l) {
@@ -268,6 +268,30 @@ class Table {
     let records;
     if (filters === undefined) {
       records = await selectRecord(tb, section);
+      if (Array.isArray(records) && records.length > 1) {
+        const [l, r] = section;
+        for (let i = l; i <= r; i += 1) {
+          datas[i] = records[i - l];
+        }
+        Object.keys(records[0]).forEach((k) => {
+          const o = this.hash[k];
+          if (o !== undefined && o.type === 's') {
+            const { sections, } = o;
+            sections.push(section);
+            o.chaotic = true;
+          } else {
+            this.hash[k] = {
+              type: 's',
+              sections: [section],
+              jumps: [],
+              chaotic: false,
+            };
+            const [l, r] = section;
+            const { jumps, } = this.hash[k];
+            jumps[l] = r;
+          }
+        });
+      }
     } else {
       const hash = {};
       const source = {};
