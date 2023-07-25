@@ -23,9 +23,10 @@ function formateBracket(list) {
   return '(' + list.join(',') + ')';
 }
 
-export default function inertData(table, obj) {
+export default function inertData(table, objs) {
   return new Promise((resolve, reject) => {
-    const sql = 'INSERT INTO ' + table + getCols(obj) + ' VALUES ' + getVals(obj);
+    const values = objs.map((o) => getVals(o)).join(',');
+    const sql = 'INSERT INTO ' + table + getCols(objs[0]) + ' VALUES ' + values;
     connection.query(sql, (err, results) => {
         if (err) {
           reject(err);

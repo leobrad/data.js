@@ -204,30 +204,34 @@ class Table {
     return ans;
   }
 
-  async insert(message) {
+  async insert(cnt) {
     const { tb, } = this;
-    await insertRecord(tb, message);
+    if (Array.isArray(cnt)) {
+      await insertRecord(tb, cnt);
+    } else {
+      await insertRecord(tb, [cnt])
+    }
   }
 
-  async deleteExchange(message, total) {
-    if (message === total) {
+  async deleteExchange(id, total) {
+    if (id === total) {
       const { tb, } = this;
-      await deleteRecord(tb, message);
+      await deleteRecord(tb, id);
     } else {
       const { tb, } = this;
-      const lastDatas = await selectRecord(tb, [total, total]);
-      const lastData = lastDatas[0];
+      const records = await selectRecord(tb, [total - 1, total - 1]);
+      const record = records[0];
       await deleteRecord(tb, total);
-      lastData.id = message.id;
-      await updateRecord(tb, lastData);
+      record.id = id;
+      await updateRecord(tb, record);
     }
   }
 
   deleteKeySections(id) {
-    const { hash, } = this;
-    if (this.datas[id]) {
-      Object.keys(this.datas[id]).forEach((k) => {
-        const { sections, } = hash[filter];
+    const { hash, datas, } = this;
+    if (datas[id] !== undefined) {
+      Object.keys(datas[id]).forEach((k) => {
+        const { sections, } = hash[k];
         sections.forEach((s, i) => {
           const [l, r] = s;
           if (id === l) {
@@ -240,11 +244,11 @@ class Table {
             sections.splice(i, 1);
             sections.push([l, id - 1]);
             sections.push([id + 1, r]);
-            this.hash[filter].chaotic = true;
+            hash[k].chaotic = true;
           }
         });
       });
-      this.datas[id] = undefined;
+      datas[id] = undefined;
     }
   }
 
@@ -254,10 +258,10 @@ class Table {
     this.deleteKeySections(id);
   }
 
-  async update(message) {
+  async update(obj) {
     const { tb, } = this;
-    await updateRecord(tb, message);
-    this.deleteKeySections(message.id);
+    await updateRecord(tb, obj);
+    this.deleteKeySections(obj.id);
   }
 
   async select(section, filters, arrange) {
