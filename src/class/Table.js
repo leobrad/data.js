@@ -100,6 +100,11 @@ class Table {
     this.datas = [];
   }
 
+  emptyCache() {
+    this.hash = {};
+    this.datas = [];
+  }
+
   arrangePointers() {
     const { hash, } = this;
     const keys = Object.keys(hash);
@@ -149,14 +154,12 @@ class Table {
           pointers.push(k);
         }
       });
-      if (source !== undefined) {
-        pointers.forEach((k) => {
-          hash[k] = {
-            type: 'p',
-            pointer: source,
-          };
-        });
-      }
+      pointers.forEach((k) => {
+        hash[k] = {
+          type: 'p',
+          pointer: source,
+        };
+      });
     });
   }
 
