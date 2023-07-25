@@ -8,8 +8,10 @@ beforeAll(() => {
 
 describe('[class] Users update test case;', () => {
   test('update first arbitrarliy records;', async () => {
+    let users = await global.user.tb.select([13, 13]);
+    expect(JSON.stringify(users)).toMatch('[{\"id\":14,\"name\":\"particia\",\"age\":24,\"gender\":1,\"city\":\"irvine\",\"country\":\"america\"}]');
     await global.user.tb.update({ id: 14, name: 'update', });
-    const users = await global.user.tb.select([13, 13]);
+    users = await global.user.tb.select([13, 13]);
     expect(JSON.stringify(users)).toMatch('[{\"id\":14,\"name\":\"update\",\"age\":24,\"gender\":1,\"city\":\"irvine\",\"country\":\"america\"}]');
   });
 });

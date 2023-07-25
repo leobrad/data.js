@@ -28,6 +28,9 @@ function deepCopyRecord(l, r, o, ans, datas, filters) {
 }
 
 function concatSections(sections) {
+  if (sections.length === 1) {
+    return;
+  }
   let status = 0;
   let i = 0;
   while (sections[i + 1] !== undefined) {
