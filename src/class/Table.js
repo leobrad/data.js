@@ -29,7 +29,7 @@ function deepCopyRecord(l, r, o, ans, datas, filters) {
 
 function concatSections(sections) {
   if (sections.length === 1) {
-    return;
+    return sections;
   }
   let status = 0;
   let i = 0;
@@ -312,9 +312,40 @@ class Table {
             await this.cacheSections(sections, datas, f);
           }
         } else if (k === '*rest') {
+          const h = {};
+          hash[k].forEach((e) => {
+            h[e] = true;
+          });
+          const lists = {};
+          Object.keys(this.hash).forEach((e) => {
+            const o = this.hash[e];
+            const { pointer: p, } = o;
+            if (o.type === 'p' && h[p] === true) {
+              if (lists[p] === undefined) {
+                lists[p] = [];
+              }
+              lists[p].push(e);
+            }
+          });
           for (let j = 0; j < hash[k].length; j += 1) {
             const f = hash[k][j];
             if (hash[f] === undefined) {
+              const list = lists[f];
+              if (Array.isArray(list)) {
+                const { sections: s, jumps: j, } = this.hash[f];
+                this.hash[list[0]] = {
+                  type: 's',
+                  jumps: j.slice(0, j.length),
+                  sections: s.slice(0, s.length),
+                  chaotic: s.chaotic,
+                };
+                for (let i = 1; i < list.length; i += 1) {
+                  this.hash[list[i]] = {
+                    type: 'p',
+                    pointer: list[0],
+                  };
+                }
+              }
               const sections = this.calcSections(section, datas, f);
               await this.cacheSections(sections, datas, f);
             }
@@ -327,7 +358,7 @@ class Table {
               type: 's',
               jumps: j.slice(0, j.length),
               sections: s.slice(0, s.length),
-              chaotic: false,
+              chaotic: s.chaotic,
             };
             for (let j = 1; j < hash[k].length; j += 1) {
               this.hash[hash[k][j]] = {
@@ -354,9 +385,10 @@ class Table {
           }
         }
       }
-      records = datas.slice(section[0], section[1] + 1)
       if (arrange === true) {
         records = this.arrangeRecords(datas, section, filters);
+      } else {
+        records = datas.slice(section[0], section[1] + 1)
       }
     }
     return records;
