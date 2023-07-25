@@ -321,10 +321,12 @@ class Table {
           }
         } else {
           if (k !== '*rest' && source[this.hash[hash[k][0]].pointer] === undefined) {
+            const p = this.hash[hash[k][0]].pointer;
+            const { sections: s, jumps: j, } = this.hash[p];
             this.hash[hash[k][0]] = {
               type: 's',
-              jumps: [],
-              sections: [],
+              jumps: j.slice(0, j.length),
+              sections: s.slice(0, s.length),
               chaotic: false,
             };
             for (let j = 1; j < hash[k].length; j += 1) {
@@ -425,15 +427,6 @@ class Table {
         status = 1;
         const { jumps, sections, } = this.hash[filter];
         if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
-          for (let i = pointer; i < sections.length; i += 1) {
-            if (sections[i] !== undefined) {
-              if (index <= sections[i][0]) {
-                sections.splice(i, 1);
-                pointer = i + 1;
-                break;
-              }
-            }
-          }
           index = jumps[index] + 1;
         } else {
           this.concatSections(filter);
