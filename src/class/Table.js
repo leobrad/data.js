@@ -98,7 +98,66 @@ class Table {
     this.tb = tb;
     this.hash = {};
     this.datas = [];
-    this.exists = false;
+  }
+
+  arrangePointers() {
+    const { hash, } = this;
+    const keys = Object.keys(hash);
+    keys.forEach((k) => {
+      this.concatSections(k);
+    });
+    const indexs = new Array(keys.length).map((_, i) => i);
+    const sets = [];
+    while (indexs.length === 0) {
+      const set = [];
+      const source = hash[keys[0]].sections;
+      if (source !== undefined) {
+        set.push(indexs[0]);
+      }
+      for (let i = 1; i < indexs.length; i += 1) {
+        const target = hash[keys[i]].sections;
+        if (source === undefined) {
+          if (source === target) {
+            indexs.splice(i, 1);
+          }
+        }
+        if (Array.isArray(source) && Array.isArray(target)) {
+          if (source.length !== target.length) {
+            continue;
+          } else {
+            if (source.every((e, i) => e === target[i])) {
+              set.push(i);
+              indexs.splice(i, 1);
+            }
+          }
+        }
+      }
+      indexs.shift();
+      if (source !== undefined) {
+        sets.push(set);
+      }
+    }
+    sets.forEach((set) => {
+      let source;
+      const pointers = [];
+      set.forEach((x) => {
+        const k = keys[x];
+        const e = hash[k];
+        if (e.type === 's' && source === undefined) {
+          source = k;
+        } else {
+          pointers.push(k);
+        }
+      });
+      if (source !== undefined) {
+        pointers.forEach((k) => {
+          hash[k] = {
+            type: 'p',
+            pointer: source,
+          };
+        });
+      }
+    });
   }
 
   async cacheSections(sections, datas, filter) {
