@@ -530,7 +530,11 @@ class Table {
       if (arrange === true) {
         records = this.arrangeRecords(datas, section, filters);
       } else {
-        records = datas.slice(section[0], section[1] + 1)
+        if (spaceOptimize === true) {
+          deepCopyRecord(l, r, l, records, datas, filters);
+        } else {
+          records = datas.slice(section[0], section[1] + 1)
+        }
       }
       if (recordUseCount === true) {
         this.countSection(section);
