@@ -37,7 +37,6 @@ function concatSections(sections) {
   if (sections.length === 1) {
     return sections;
   }
-  let status = 0;
   let i = 0;
   while (sections[i + 1] !== undefined) {
     const [l1, r1] = sections[i];
@@ -226,7 +225,6 @@ class Table {
     if (chaotic === true) {
       this.hash[filter].sections = radixSort(sections);
       sections = this.hash[filter].sections;
-      let status = 0;
       let i = 0;
       while (sections[i + 1] !== undefined) {
         const [l1, r1] = sections[i];
@@ -529,11 +527,8 @@ class Table {
     let [index, right] = section;
     const ans = [];
     let pointer = -1;
-    let status = 0;
-    let start = index;
     while (index <= right) {
       if (datas[index] === undefined || datas[index][filter] === undefined) {
-        status = 0;
         let { jumps, sections, } = this.hash[filter];
         if (sections.length === 0) {
           sections.push(section);
@@ -563,7 +558,7 @@ class Table {
           if (i >= sections.length - 1 && sections[i + 1] === undefined) {
             if (sections[i] === undefined || index > sections[i][1]) {
               pointer = sections.length - 1;
-              const section = [start, right];
+              const section = [index, right];
               ans.push(section);
               this.hash[filter].sections.push(section);
               this.hash[filter].chaotic = true;
@@ -583,11 +578,8 @@ class Table {
             sections.splice(0, section);
             break;
           }
-          start = index;
-          jumps[start] = undefined;
         }
       } else {
-        status = 1;
         const { jumps, sections, } = this.hash[filter];
         if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
           const [j, p] = jumps;
