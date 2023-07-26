@@ -201,12 +201,12 @@ class Table {
 
   countSection(section) {
     const [l, r] = section;
-    const { count } = this;
+    const { counts, } = this;
     for (let i = l; i <= r; i += 1) {
-      if (count[i] === 0) {
-        count[i] = 0;
+      if (counts[i] === 0) {
+        counts[i] = 0;
       }
-      count[i] += 1;
+      counts[i] += 1;
       this.outOfOrder = true;
     }
   }
@@ -254,7 +254,7 @@ class Table {
     }
   }
 
-  async arrangeRecords(datas, section, filters) {
+  arrangeRecords(datas, section, filters) {
     const hash = {};
     const ans = [];
     filters.forEach((f) => {
@@ -285,12 +285,7 @@ class Table {
       });
     });
     if (intersections.length === 0) {
-      const [l4, r4] = section;
-      for (let i = 0; i < filters.length; i += 1) {
-        const f = filters[i];
-        await this.cacheSections([section], datas, f);
-      }
-      shadowCopyRecord(l4, r4, l4, ans, datas);
+      shadowCopyRecord(l1, r1, l1, ans, datas);
       return ans;
     }
     intersections = radixSort(intersections);
@@ -533,7 +528,7 @@ class Table {
         }
       }
       if (arrange === true) {
-        records = await this.arrangeRecords(datas, section, filters);
+        records = this.arrangeRecords(datas, section, filters);
       } else {
         records = datas.slice(section[0], section[1] + 1)
       }
