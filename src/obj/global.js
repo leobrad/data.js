@@ -15,6 +15,7 @@ const connection = mysql.createPool({
 const global = {
   datajs: {
     connection,
+    recordUseCount: true,
   },
   user: {},
 };

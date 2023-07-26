@@ -33,6 +33,14 @@ function deepCopyRecord(l, r, o, ans, datas, filters) {
   }
 }
 
+function generateBareJump(sections, i, jumps) {
+  if (sections[i - 1] !== undefined) {
+    const [l1, r1] = sections[i - 1];
+    const [l2] = sections[i];
+    jumps[r1 + 1] = [l2 - 1, i - 1];
+  }
+}
+
 function concatSections(sections) {
   if (sections.length === 1) {
     return sections;
@@ -118,10 +126,12 @@ class Table {
     }
   }
 
-  clearRecordsCache(count) {
+  reduceRecordsCache(count) {
     const { outOfOrder, } = this;
     if (outOfOrder === true) {
       this.orders = this.counts.map((e, i) => [e, i]);
+      const { orders, } = this;
+      this.orders = radixSort(orders);
       this.outOfOrder = false;
     }
     const { orders, } = this;
@@ -234,15 +244,17 @@ class Table {
           const max = Math.max(r1, r2);
           sections.splice(i, 2, [min, max]);
           jumps[min] = [max, i];
+          generateBareJump(sections, i, jumps);
         } else {
           i += 1;
+          generateBareJump(sections, i, jumps);
         }
       }
       this.hash[filter].chaotic = false;
     }
   }
 
-  arrangeRecords(datas, section, filters) {
+  async arrangeRecords(datas, section, filters) {
     const hash = {};
     const ans = [];
     filters.forEach((f) => {
@@ -272,6 +284,15 @@ class Table {
         }
       });
     });
+    if (intersections.length === 0) {
+      const [l4, r4] = section;
+      for (let i = 0; i < filters.length; i += 1) {
+        const f = filters[i];
+        await this.cacheSections([section], datas, f);
+      }
+      shadowCopyRecord(l4, r4, l4, ans, datas);
+      return ans;
+    }
     intersections = radixSort(intersections);
     intersections = concatSections(intersections);
     if (intersections.length === 1) {
@@ -512,7 +533,7 @@ class Table {
         }
       }
       if (arrange === true) {
-        records = this.arrangeRecords(datas, section, filters);
+        records = await this.arrangeRecords(datas, section, filters);
       } else {
         records = datas.slice(section[0], section[1] + 1)
       }
@@ -538,6 +559,11 @@ class Table {
           return ans;
         }
         this.concatSections(filter);
+        if (jumps[index] !== undefined && (datas[index - 1] && datas[index - 1][filter] !== undefined)) {
+          const [j, p] = jumps[index];
+          index = j + 1;
+          pointer = p;
+        }
         for (let i = pointer; i <= sections.length; i += 1) {
           if (i <= -1 && sections[i] === undefined) {
             const s = sections[i + 1];
@@ -575,13 +601,14 @@ class Table {
             }
             ans.push(section);
             sections.splice(0, section);
+            jumps[r1 + 1] = [l2 - 1, i];
             break;
           }
         }
       } else {
         const { jumps, sections, } = this.hash[filter];
         if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
-          const [j, p] = jumps;
+          const [j, p] = jumps[index];
           index = j + 1;
           pointer = p;
         } else {
