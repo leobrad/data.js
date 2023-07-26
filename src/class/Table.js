@@ -7,12 +7,18 @@ import updateRecord from '~/lib/updateRecord';
 const {
   datajs: {
     connection,
+    spaceOptimize,
+    recordUseCount,
   },
 } = global;
 
 function shadowCopyRecord(l, r, o, ans, datas) {
-  for (let i = l; i <= r; i += 1) {
-    ans[i - o] = datas[i];
+  if (spaceOptimize === true) {
+    deepCopyRecord(l, r, o, ans, datas, filters);
+  } else {
+    for (let i = l; i <= r; i += 1) {
+      ans[i - o] = datas[i];
+    }
   }
 }
 
@@ -98,11 +104,32 @@ class Table {
     this.tb = tb;
     this.hash = {};
     this.datas = [];
+    if (recordUseCount === true) {
+      this.counts = [];
+      this.outOfOrder = true;
+    }
   }
 
   emptyCache() {
     this.hash = {};
     this.datas = [];
+    if (recordUseCount === true) {
+      this.counts = [];
+      this.outOfOrder = true;
+    }
+  }
+
+  clearRecordsCache(count) {
+    const { outOfOrder, } = this;
+    if (outOfOrder === true) {
+      this.orders = this.counts.map((e, i) => [e, i]);
+      this.outOfOrder = false;
+    }
+    const { orders, } = this;
+    for (let i = 1; i <= count; i += 1) {
+      const i = orders[i];
+      this.counts[i] = 0;
+    }
   }
 
   arrangePointers() {
@@ -163,6 +190,18 @@ class Table {
     });
   }
 
+  countSection(section) {
+    const [l, r] = section;
+    const { count } = this;
+    for (let i = l; i <= r; i += 1) {
+      if (count[i] === 0) {
+        count[i] = 0;
+      }
+      count[i] += 1;
+      this.outOfOrder = true;
+    }
+  }
+
   async cacheSections(sections, datas, filter) {
     const { tb, } = this;
     for (let i = 0; i < sections.length; i += 1) {
@@ -196,7 +235,7 @@ class Table {
           const min = Math.min(l1, l2);
           const max = Math.max(r1, r2);
           sections.splice(i, 2, [min, max]);
-          jumps[min] = max;
+          jumps[min] = [max, i];
         } else {
           i += 1;
         }
@@ -289,7 +328,7 @@ class Table {
     }
   }
 
-  deleteKeySections(id) {
+  deleteDataById(id) {
     const { hash, datas, } = this;
     if (datas[id] !== undefined) {
       Object.keys(datas[id]).forEach((k) => {
@@ -304,8 +343,8 @@ class Table {
           }
           if (id > l && id < r) {
             sections.splice(i, 1, [l, id - 1], [id + 1, r]);
-            jumps[l] = id - 1;
-            jumps[id + 1] = r;
+            jumps[l] = [id - 1, i];
+            jumps[id + 1] = [r, i + 1];
           }
         });
       });
@@ -316,13 +355,13 @@ class Table {
   async delete(id) {
     const { tb, } = this;
     await deleteRecord(tb, id);
-    this.deleteKeySections(id);
+    this.deleteDataById(id);
   }
 
   async update(obj) {
     const { tb, } = this;
     await updateRecord(tb, obj);
-    this.deleteKeySections(obj.id);
+    this.deleteDataById(obj.id);
   }
 
   async select(section, filters, arrange) {
@@ -350,7 +389,7 @@ class Table {
             };
             const [l, r] = section;
             const { jumps, } = this.hash[k];
-            jumps[l] = r;
+            jumps[l] = [r, 0];
           }
         });
       }
@@ -479,6 +518,9 @@ class Table {
       } else {
         records = datas.slice(section[0], section[1] + 1)
       }
+      if (recordUseCount === true) {
+        this.countSection(section);
+      }
     }
     return records;
   }
@@ -497,19 +539,22 @@ class Table {
           sections.push(section);
           ans.push(section);
           const [l, r] = section;
-          this.hash[filter].jumps[l] = r;
+          this.hash[filter].jumps[l] = [r, 0];
           return ans;
         }
         this.concatSections(filter);
         for (let i = pointer; i <= sections.length; i += 1) {
           if (i <= -1 && sections[i] === undefined) {
-            if (sections[i + 1] !== undefined) {
-              if (index < sections[i + 1][0]) {
-                pointer = 0;
-                const section = [index, sections[i + 1][0]];
+            const s = sections[i + 1];
+            if (s !== undefined) {
+              const [l, r] = s;
+              if (index < r) {
+                pointer = 1;
+                const section = [index, r];
                 ans.push(section);
                 sections.push(section);
-                index = sections[i + 1][0];
+                jumps[index] = [r, 0];
+                index = r + 1;
                 this.hash[filter].chaotic = true;
                 break;
               }
@@ -522,7 +567,6 @@ class Table {
               const section = [start, right];
               ans.push(section);
               this.hash[filter].sections.push(section);
-              jumps[start] = section[1];
               this.hash[filter].chaotic = true;
               return ans;
             }
@@ -531,14 +575,13 @@ class Table {
           const [l1, r1] = sections[i];
           const [l2, r2] = sections[i + 1];
           if (index > r1 && index < l2) {
-            pointer = i;
+            pointer = i + 1;
             const section = [index, l2];
             if (l2 <= right) {
               index = l2;
             }
             ans.push(section);
-            sections.push(section);
-            this.hash[filter].chaotic = true;
+            sections.splice(0, section);
             break;
           }
           start = index;
@@ -548,7 +591,9 @@ class Table {
         status = 1;
         const { jumps, sections, } = this.hash[filter];
         if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
-          index = jumps[index] + 1;
+          const [j, p] = jumps;
+          index = j + 1;
+          pointer = p;
         } else {
           this.concatSections(filter);
           const sections = this.hash[filter].sections;
