@@ -561,7 +561,6 @@ class Table {
               const section = [index, right];
               ans.push(section);
               this.hash[filter].sections.push(section);
-              this.hash[filter].chaotic = true;
               return ans;
             }
             return ans;
