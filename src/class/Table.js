@@ -549,13 +549,12 @@ class Table {
             if (s !== undefined) {
               const [l, r] = s;
               if (index < r) {
-                pointer = 1;
+                pointer = 0;
                 const section = [index, r];
                 ans.push(section);
-                sections.push(section);
+                sections.splice(0, 1, section);
                 jumps[index] = [r, 0];
                 index = r + 1;
-                this.hash[filter].chaotic = true;
                 break;
               }
             }
