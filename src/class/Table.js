@@ -12,13 +12,17 @@ const {
   },
 } = global;
 
+function getLength(section) {
+  const [l, r] = section;
+  return r - l + 1;
+}
+
 function pairEqual(c1, c2) {
   let flag = true;
-  if (c1[0] !== c2[0]) {
-    flag = false;
-  }
-  if (c1[1] !== c2[1]) {
-    flag = false;
+  for (let i = 0; i < c1.length; i += 1) {
+    if (c1[i] !== c2[i]) {
+      flag = false;
+    }
   }
   return flag;
 }
@@ -122,6 +126,7 @@ class Table {
     this.tb = tb;
     this.hash = {};
     this.datas = [];
+    this.limit = Number.NEGATIVE_INFINITY;
     if (recordUseCount === true) {
       this.counts = [];
       this.outOfOrder = true;
@@ -232,6 +237,17 @@ class Table {
     }
   }
 
+  updateLimit(section, sections) {
+    const { length, } = sections;
+    const s1 = sections[length - 1];
+    const s2 = sections[length - 2];
+    const max1 = getLength(s1);
+    if (max1 > this.limit) {
+      this.limit = max1;
+    }
+  }
+
+
   async cacheSections(sections, datas, filter) {
     const { tb, } = this;
     for (let i = 0; i < sections.length; i += 1) {
@@ -257,9 +273,18 @@ class Table {
       this.hash[filter].sections = radixSort(sections);
       sections = this.hash[filter].sections;
       let i = 0;
+      this.limit = Number.NEGATIVE_INFINITY;
       while (sections[i + 1] !== undefined) {
         const [l1, r1] = sections[i];
+        const max1 = getLength(section[i]);
+        if (max1 > this.limit) {
+          this.limit = max1;
+        }
         const [l2, r2] = sections[i + 1];
+        const max2 = getLength(section[i]);
+        if (max2 > this.limit) {
+          this.limit = max2;
+        }
         if (r1 >= l2 - 1) {
           const min = Math.min(l1, l2);
           const max = Math.max(r1, r2);
@@ -418,6 +443,7 @@ class Table {
           if (o !== undefined && o.type === 's') {
             const { sections, } = o;
             sections.push(section);
+            this.updateLimit(section, sections);
             o.chaotic = true;
           } else {
             this.hash[k] = {
@@ -499,12 +525,12 @@ class Table {
             if (hash[f] === undefined) {
               const list = lists[f];
               if (Array.isArray(list)) {
-                const { sections: s, jumps: j, } = this.hash[f];
+                const { sections: s, jumps: j, chaotic, } = this.hash[f];
                 this.hash[list[0]] = {
                   type: 's',
                   jumps: j.slice(0, j.length),
                   sections: s.slice(0, s.length),
-                  chaotic: s.chaotic,
+                  chaotic,
                 };
                 for (let i = 1; i < list.length; i += 1) {
                   this.hash[list[i]] = {
@@ -520,12 +546,12 @@ class Table {
         } else {
           if (k !== '*rest' && source[this.hash[hash[k][0]].pointer] === undefined) {
             const p = this.hash[hash[k][0]].pointer;
-            const { sections: s, jumps: j, } = this.hash[p];
+            const { sections: s, jumps: j, chaotic, } = this.hash[p];
             this.hash[hash[k][0]] = {
               type: 's',
               jumps: j.slice(0, j.length),
               sections: s.slice(0, s.length),
-              chaotic: s.chaotic,
+              chaotic,
             };
             for (let j = 1; j < hash[k].length; j += 1) {
               this.hash[hash[k][j]] = {
@@ -572,11 +598,30 @@ class Table {
     let [index, right] = section;
     const ans = [];
     let pointer = -1;
+    this.concatSections(filter);
+    if (datas[index] !== undefined && datas[index][filter] !== undefined) {
+      if (getLength([0, index]) / this.limit >= 5) {
+        if (this.limit > Number.NEGATIVE_INFINITY) {
+          const { jumps, } = this.hash[filter];
+          while (true) {
+            if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
+              const [j, i] = jumps[index];
+              index = j;
+              pointer = i;
+              break;
+            } else {
+              index -= 1;
+            }
+          }
+        }
+      }
+    }
     while (index <= right) {
       if (datas[index] === undefined || datas[index][filter] === undefined) {
         let { jumps, sections, } = this.hash[filter];
         if (sections.length === 0) {
           sections.push(section);
+          this.updateLimit(section, sections);
           ans.push(section);
           const [l, r] = section;
           this.hash[filter].jumps[l] = [r, 0];
@@ -611,6 +656,7 @@ class Table {
               const section = [index, right];
               ans.push(section);
               this.hash[filter].sections.push(section);
+              this.updateLimit(section, sections);
               return ans;
             }
             return ans;

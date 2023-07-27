@@ -34,7 +34,7 @@ describe('[class] Users arrange pointer test case;', () => {
   test('check arrange pointer situation;', async () => {
     const global_user_tb = global.user.tb;
     global_user_tb.arrangePointers();
-    expect(JSON.stringify(global_user_tb.hash['id'])).toMatch('{\"type\":\"s\",\"jumps\":[null,null,null,null,null,null,null,null,null,null,[13,0]],\"sections\":[[10,13]],\"chaotic\":false}');
-    expect(JSON.stringify(global_user_tb.hash['gender'])).toMatch('{\"type\":\"p\",\"pointer\":\"gender\"}');
+    expect(JSON.stringify(global_user_tb.hash['id'])).toMatch('{\"type\":\"p\",\"pointer\":\"gender\"}');
+    expect(JSON.stringify(global_user_tb.hash['gender'])).toMatch('{\"type\":\"s\",\"jumps\":[null,null,null,null,null,null,null,null,null,null,[13,0]],\"sections\":[[10,13]],\"chaotic\":false}');
   });
 });
