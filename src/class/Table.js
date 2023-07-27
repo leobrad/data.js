@@ -591,7 +591,9 @@ class Table {
     this.concatSections(filter);
     if (datas[index] !== undefined && datas[index][filter] !== undefined) {
       const l = getLength([0, index]);
-      if (l / this.average * l >= 16) {
+      const { average, } = this;
+      const multily = average * l;
+      if (multily >= 1.8 && l / multily >= 16) {
         const { jumps, } = this.hash[filter];
         while (true) {
           if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
