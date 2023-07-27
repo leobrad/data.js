@@ -601,7 +601,7 @@ class Table {
     this.concatSections(filter);
     if (datas[index] !== undefined && datas[index][filter] !== undefined) {
       const l = getLength([0, index]);
-      if (l / this.limit * l >= 12) {
+      if (l / this.limit * l >= 12 && l / this.limit >= 4.5) {
         if (this.limit > Number.NEGATIVE_INFINITY) {
           const { jumps, } = this.hash[filter];
           while (true) {
