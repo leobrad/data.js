@@ -600,7 +600,8 @@ class Table {
     let pointer = -1;
     this.concatSections(filter);
     if (datas[index] !== undefined && datas[index][filter] !== undefined) {
-      if (getLength([0, index]) / this.limit >= 5) {
+      const l = getLength([0, index]);
+      if (l / this.limit * l >= 12) {
         if (this.limit > Number.NEGATIVE_INFINITY) {
           const { jumps, } = this.hash[filter];
           while (true) {
