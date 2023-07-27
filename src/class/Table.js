@@ -329,7 +329,7 @@ class Table {
   }
 
   async deleteExchange(id, total) {
-    if (id === total) {
+    if (id === total - 1) {
       const { tb, } = this;
       await deleteRecord(tb, id);
     } else {
