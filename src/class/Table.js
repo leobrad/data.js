@@ -129,15 +129,15 @@ class Table {
   reduceRecordsCache(count) {
     const { outOfOrder, } = this;
     if (outOfOrder === true) {
-      this.orders = this.counts.map((e, i) => [e, i]);
+      const { counts, } = this;
+      this.orders = counts.map((e, i) => [e, i]);
+      this.orders = radixSort(this.orders);
       const { orders, } = this;
-      this.orders = radixSort(orders);
+      for (let i = 0; i < count; i += 1) {
+        const [_, x] = orders[i];
+        this.deleteDataById(x);
+      }
       this.outOfOrder = false;
-    }
-    const { orders, } = this;
-    for (let i = 1; i <= count; i += 1) {
-      const i = orders[i];
-      this.counts[i] = 0;
     }
   }
 
@@ -203,7 +203,7 @@ class Table {
     const [l, r] = section;
     const { counts, } = this;
     for (let i = l; i <= r; i += 1) {
-      if (counts[i] === 0) {
+      if (counts[i] === undefined) {
         counts[i] = 0;
       }
       counts[i] += 1;
@@ -336,7 +336,7 @@ class Table {
       const { tb, } = this;
       const records = await selectRecord(tb, [total - 1, total - 1]);
       const record = records[0];
-      await deleteRecord(tb, total);
+      await deleteRecord(tb, total - 1);
       record.id = id;
       await updateRecord(tb, record);
     }
@@ -363,6 +363,10 @@ class Table {
         });
       });
       datas[id] = undefined;
+      if (recordUseCount === true) {
+        const { counts, } = this;
+        counts[id] = 0;
+      }
     }
   }
 

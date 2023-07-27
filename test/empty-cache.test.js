@@ -21,16 +21,17 @@ describe('[class] Users empty cache test case;', () => {
   });
   test('select fourth arbitrarliy record;', async () => {
     const users = await global.user.tb.select([10, 12], ['id', 'name', 'age'], true);
-    expect(JSON.stringify(users)).toMatch('[{\"id\":11,\"name\":\"taylor\",\"age\":23},{\"id\":12,\"name\":\"emily\",\"age\":23},{\"id\":13,\"name\":\"emma\",\"age\":23}]');
+    expect(JSON.stringify(users)).toMatch('[{\"id\":10,\"name\":\"taylor\",\"age\":23},{\"id\":11,\"name\":\"emily\",\"age\":23},{\"id\":12,\"name\":\"emma\",\"age\":23}]');
   });
   test('select fifth arbitrarliy record;', async () => {
     const users = await global.user.tb.select([7, 13], ['name', 'age'], true);
     expect(JSON.stringify(users)).toMatch('[{\"name\":\"george\",\"age\":23},{\"name\":\"alexander\",\"age\":25},{\"name\":\"john\",\"age\":25},{\"name\":\"taylor\",\"age\":23},{\"name\":\"emily\",\"age\":23},{\"name\":\"emma\",\"age\":23},{\"name\":\"particia\",\"age\":24}]');
   });
-  test('select fifth arbitrarliy record;', async () => {
+  test('check empty cache situation;', async () => {
+    const global_user_tb = global.user.tb;
     global.user.tb.emptyCache();
-    expect(JSON.stringify(global.user.tb.datas)).toMatch('[]');
-    expect(JSON.stringify(global.user.tb.hash)).toMatch('{}');
-    expect(JSON.stringify(global.user.tb.counts)).toMatch('[]');
+    expect(JSON.stringify(global_user_tb.datas)).toMatch('[]');
+    expect(JSON.stringify(global_user_tb.hash)).toMatch('{}');
+    expect(JSON.stringify(global_user_tb.counts)).toMatch('[]');
   });
 });

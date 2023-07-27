@@ -29,6 +29,6 @@ describe('[class] Users select arrange test case;', () => {
   });
   test('select fifth arrange column duplicate record;', async () => {
     const users = await global.user.tb.select([7, 9], ['id', 'name'], true);
-    expect(JSON.stringify(users)).toMatch('[{\"id\":8,\"name\":\"george\"},{\"id\":9,\"name\":\"alexander\"},{\"id\":10,\"name\":\"john\"}]');
+    expect(JSON.stringify(users)).toMatch('[{\"id\":7,\"name\":\"george\"},{\"id\":8,\"name\":\"alexander\"},{\"id\":9,\"name\":\"john\"}]');
   });
 });
