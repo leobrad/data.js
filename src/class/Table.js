@@ -126,7 +126,7 @@ class Table {
     this.tb = tb;
     this.hash = {};
     this.datas = [];
-    this.limit = Number.NEGATIVE_INFINITY;
+    this.average = 0;
     if (recordUseCount === true) {
       this.counts = [];
       this.outOfOrder = true;
@@ -237,14 +237,10 @@ class Table {
     }
   }
 
-  updateLimit(section, sections) {
-    const { length, } = sections;
-    const s1 = sections[length - 1];
-    const s2 = sections[length - 2];
-    const max1 = getLength(s1);
-    if (max1 > this.limit) {
-      this.limit = max1;
-    }
+  updateAverage(section, sections) {
+    const v = getLength(sections[sections.length - 1]);
+    const { average, } = this;
+    this.average = (v + average) / 2;
   }
 
 
@@ -273,18 +269,12 @@ class Table {
       this.hash[filter].sections = radixSort(sections);
       sections = this.hash[filter].sections;
       let i = 0;
-      this.limit = Number.NEGATIVE_INFINITY;
       while (sections[i + 1] !== undefined) {
-        const [l1, r1] = sections[i];
-        const max1 = getLength(section[i]);
-        if (max1 > this.limit) {
-          this.limit = max1;
-        }
-        const [l2, r2] = sections[i + 1];
-        const max2 = getLength(section[i]);
-        if (max2 > this.limit) {
-          this.limit = max2;
-        }
+        const { average, } = this;
+        const v1 = getLength(section[i]);
+        this.average = (v1 + average) / 2;
+        const v2 = getLength(section[i]);
+        this.average = (v2 + average) / 2;
         if (r1 >= l2 - 1) {
           const min = Math.min(l1, l2);
           const max = Math.max(r1, r2);
@@ -443,7 +433,7 @@ class Table {
           if (o !== undefined && o.type === 's') {
             const { sections, } = o;
             sections.push(section);
-            this.updateLimit(section, sections);
+            this.updateAverage(section, sections);
             o.chaotic = true;
           } else {
             this.hash[k] = {
@@ -601,18 +591,16 @@ class Table {
     this.concatSections(filter);
     if (datas[index] !== undefined && datas[index][filter] !== undefined) {
       const l = getLength([0, index]);
-      if (l / this.limit * l >= 16) {
-        if (this.limit > Number.NEGATIVE_INFINITY) {
-          const { jumps, } = this.hash[filter];
-          while (true) {
-            if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
-              const [j, i] = jumps[index];
-              index = j;
-              pointer = i;
-              break;
-            } else {
-              index -= 1;
-            }
+      if (l / this.average * l >= 16) {
+        const { jumps, } = this.hash[filter];
+        while (true) {
+          if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
+            const [j, i] = jumps[index];
+            index = j;
+            pointer = i;
+            break;
+          } else {
+            index -= 1;
           }
         }
       }
@@ -622,7 +610,7 @@ class Table {
         let { jumps, sections, } = this.hash[filter];
         if (sections.length === 0) {
           sections.push(section);
-          this.updateLimit(section, sections);
+          this.updateAverage(section, sections);
           ans.push(section);
           const [l, r] = section;
           this.hash[filter].jumps[l] = [r, 0];
@@ -657,7 +645,7 @@ class Table {
               const section = [index, right];
               ans.push(section);
               this.hash[filter].sections.push(section);
-              this.updateLimit(section, sections);
+              this.updateAverage(section, sections);
               return ans;
             }
             return ans;
