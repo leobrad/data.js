@@ -1,4 +1,4 @@
-# data.js
+# datas.js
 The javascript database libary.
 
 ## Features
