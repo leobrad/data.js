@@ -593,7 +593,7 @@ class Table {
       const l = getLength([0, index]);
       const { average, } = this;
       const multily = average * l;
-      if (multily >= 1.8 && l / multily >= 16) {
+      if (multily >= 2.8 && l / multily >= 28) {
         const { jumps, } = this.hash[filter];
         while (true) {
           if (jumps[index] !== undefined && (datas[index - 1] === undefined || datas[index - 1][filter] === undefined)) {
