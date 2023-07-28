@@ -1,4 +1,4 @@
-# datas.js
+# record.js
 The javascript database libary.
 
 ## Features
