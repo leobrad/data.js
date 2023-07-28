@@ -2,7 +2,7 @@
   "name": "records.js",
   "version": "0.0.1",
   "description": "The javascript database cache libray.",
-  "main": "dist/index.js",
+  "main": "./dist/class/Table.js",
   "repository": "git@github.com:leobrad/records.js.git",
   "author": "Leo Brad",
   "license": "MIT",

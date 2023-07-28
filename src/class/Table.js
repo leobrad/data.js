@@ -1,16 +1,7 @@
-import global from '~/obj/global';
 import deleteRecord from '~/lib/deleteRecord';
 import insertRecord from '~/lib/insertRecord';
 import selectRecord from '~/lib/selectRecord';
 import updateRecord from '~/lib/updateRecord';
-
-const {
-  datajs: {
-    connection,
-    spaceOptimize,
-    recordUseCount,
-  },
-} = global;
 
 function getLength(section) {
   const [l, r] = section;
@@ -25,16 +16,6 @@ function pairEqual(c1, c2) {
     }
   }
   return flag;
-}
-
-function shadowCopyRecord(l, r, o, ans, datas) {
-  if (spaceOptimize === true) {
-    deepCopyRecord(l, r, o, ans, datas, filters);
-  } else {
-    for (let i = l; i <= r; i += 1) {
-      ans[i - o] = datas[i];
-    }
-  }
 }
 
 function deepCopyRecord(l, r, o, ans, datas, filters) {
@@ -122,11 +103,17 @@ function radixSort(list) {
 }
 
 class Table {
-  constructor(tb) {
+  constructor(tb, options) {
     this.tb = tb;
     this.hash = {};
     this.datas = [];
     this.average = 0;
+    this.options = options;
+    const {
+      options: {
+        recordUseCount,
+      },
+    } = this;
     if (recordUseCount === true) {
       this.counts = [];
       this.outOfOrder = true;
@@ -136,6 +123,11 @@ class Table {
   emptyCache() {
     this.hash = {};
     this.datas = [];
+    const {
+      options: {
+        recordUseCount,
+      },
+    } = this;
     if (recordUseCount === true) {
       this.counts = [];
       this.outOfOrder = true;
@@ -243,12 +235,31 @@ class Table {
     this.average = (v + average) / 2;
   }
 
+  shadowCopyRecord(l, r, o, ans, datas) {
+    const {
+      options: {
+        spaceOptimize,
+      },
+    } = this;
+    if (spaceOptimize === true) {
+      deepCopyRecord(l, r, o, ans, datas, filters);
+    } else {
+      for (let i = l; i <= r; i += 1) {
+        ans[i - o] = datas[i];
+      }
+    }
+  }
 
   async cacheSections(sections, datas, filter) {
-    const { tb, } = this;
+    const {
+      options: {
+        connection,
+      },
+      tb,
+    } = this;
     for (let i = 0; i < sections.length; i += 1) {
       const s = sections[i];
-      const records = await selectRecord(tb, s, [filter]);
+      const records = await selectRecord(connection, tb, s, [filter]);
       const [l, r] = s;
       for (let i = 0; i <= r - l; i += 1) {
         if (datas[l + i] === undefined) {
@@ -321,7 +332,7 @@ class Table {
       });
     });
     if (intersections.length === 0) {
-      shadowCopyRecord(l1, r1, l1, ans, datas);
+      this.shadowCopyRecord(l1, r1, l1, ans, datas);
       return ans;
     }
     intersections = radixSort(intersections);
@@ -329,23 +340,23 @@ class Table {
     if (intersections.length === 1) {
       const [l3, r3]= intersections[0];
       if (l3 > l1) {
-        shadowCopyRecord(l1, l3 - 1, l1, ans, datas);
+        this.shadowCopyRecord(l1, l3 - 1, l1, ans, datas);
       }
       deepCopyRecord(l3, r3, l1, ans, datas, filters);
       if (r3 < r1) {
-        shadowCopyRecord(r3 + 1, r1, l1, ans, datas);
+        this.shadowCopyRecord(r3 + 1, r1, l1, ans, datas);
       }
     } else {
       const left = intersections[0][0];
       if (left > l1) {
-        shadowCopyRecord(left, l1 - 1, l1, ans, datas);
+        this.shadowCopyRecord(left, l1 - 1, l1, ans, datas);
       }
       for (let i = 0; i < intersections.length - 1; i += 1) {
         const [l3, r3] = intersections[i];
         const [l4, r4] = intersections[i + 1];
         deepCopyRecord(l3, r3, l1, ans, datas, filters);
         deepCopyRecord(l4, r4, l1, ans, datas, filters);
-        shadowCopyRecord(r3 + 1, l4 - 1, l1, ans, datas);
+        this.shadowCopyRecord(r3 + 1, l4 - 1, l1, ans, datas);
       }
       const right = intersections[intersections.length - 1][1];
       if (right < l1) {
@@ -356,25 +367,35 @@ class Table {
   }
 
   async insert(cnt) {
-    const { tb, } = this;
+    const {
+      options: {
+        connection,
+      },
+      tb,
+    } = this;
     if (Array.isArray(cnt)) {
-      await insertRecord(tb, cnt);
+      await insertRecord(connection, tb, cnt);
     } else {
-      await insertRecord(tb, [cnt])
+      await insertRecord(connection, tb, [cnt])
     }
   }
 
   async deleteExchange(id, total) {
+    const {
+      options: {
+        connection,
+      },
+    } = this;
     if (id === total - 1) {
       const { tb, } = this;
-      await deleteRecord(tb, id);
+      await deleteRecord(connection, tb, id);
     } else {
       const { tb, } = this;
-      const records = await selectRecord(tb, [total - 1, total - 1]);
+      const records = await selectRecord(connection, tb, [total - 1, total - 1]);
       const record = records[0];
-      await deleteRecord(tb, total - 1);
+      await deleteRecord(connection, tb, total - 1);
       record.id = id;
-      await updateRecord(tb, record);
+      await updateRecord(connection, tb, record);
     }
   }
 
@@ -399,6 +420,11 @@ class Table {
         });
       });
       datas[id] = undefined;
+      const {
+        options: {
+          recordUseCount,
+        },
+      } = this;
       if (recordUseCount === true) {
         const { counts, } = this;
         counts[id] = 0;
@@ -407,22 +433,37 @@ class Table {
   }
 
   async delete(id) {
-    const { tb, } = this;
-    await deleteRecord(tb, id);
+    const {
+      options: {
+        connection,
+      },
+      tb,
+    } = this;
+    await deleteRecord(connection, tb, id);
     this.deleteDataById(id);
   }
 
   async update(obj) {
-    const { tb, } = this;
-    await updateRecord(tb, obj);
+    const {
+      options: {
+        connection,
+      },
+      tb,
+    } = this;
+    await updateRecord(connection, tb, obj);
     this.deleteDataById(obj.id);
   }
 
   async select(section, filters, arrange) {
-    const { datas, tb, } = this;
+    const {
+      options: {
+        connection,
+      },
+      datas, tb,
+    } = this;
     let records;
     if (filters === undefined) {
-      records = await selectRecord(tb, section);
+      records = await selectRecord(connection, tb, section);
       if (Array.isArray(records) && records.length > 1) {
         const [l, r] = section;
         for (let i = l; i <= r; i += 1) {
@@ -571,12 +612,22 @@ class Table {
       if (arrange === true) {
         records = this.arrangeRecords(datas, section, filters);
       } else {
+        const {
+          options: {
+            spaceOptimize,
+          },
+        } = this;
         if (spaceOptimize === true) {
           deepCopyRecord(l, r, l, records, datas, filters);
         } else {
           records = datas.slice(section[0], section[1] + 1)
         }
       }
+      const {
+        options: {
+          recordUseCount,
+        },
+      } = this;
       if (recordUseCount === true) {
         this.countSection(section);
       }

@@ -1,11 +1,5 @@
 import global from '~/obj/global';
 
-const {
-  datajs: {
-    connection,
-  }
-} = global;
-
 function getLimit(section) {
   if (section !== undefined) {
     const limit = section.filter((e) => e !== undefined).map((k, i) => {
@@ -26,13 +20,13 @@ function getLimit(section) {
   }
 }
 
-export default function selectData(table, section, filters) {
+export default function selectData(connection, tb, section, filters) {
   return new Promise((resolve, reject) => {
     let sql;
     if (filters === undefined) {
-      sql = 'SELECT * from ' + table + getLimit(section);
+      sql = 'SELECT * from ' + tb + getLimit(section);
     } else {
-      sql = 'SELECT ' + filters.join(',') + ' from ' + table + getLimit(section);
+      sql = 'SELECT ' + filters.join(',') + ' from ' + tb + getLimit(section);
     }
     connection.query(sql, (error, results) => {
         if (error) {
