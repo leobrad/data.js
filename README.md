@@ -1,4 +1,4 @@
-# record.js
+# records.js
 The javascript database libary.
 
 ## Features
