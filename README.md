@@ -1,5 +1,5 @@
 # records.js
-The javascript database libary.
+The javascript database cache libary.
 
 ## Features
 
