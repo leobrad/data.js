@@ -1,9 +1,8 @@
 {
-  "name": "data.js",
-  "version": "0.0.1",
+  "name": "datas.js", "version": "0.0.1",
   "description": "The javascript database cache libray.",
   "main": "dist/index.js",
-  "repository": "git@github.com:leobrad/data.js.git",
+  "repository": "git@github.com:leobrad/datas.js.git",
   "author": "Leo Brad",
   "license": "MIT",
   "scripts": {
