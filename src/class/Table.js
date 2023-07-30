@@ -232,10 +232,10 @@ class Table {
     }
   }
 
-  updateAverage(section, sections) {
+  updateAverageLast(section, sections) {
     const { length, } = sections;
     const s1 = sections[length - 1];
-    const s2 = sections[length - 1];
+    const s2 = sections[length - 2];
     const v1 = getLength(s1);
     const {
       average: {
@@ -248,7 +248,26 @@ class Table {
       const [l1, r1] = s1;
       const [l2, r2] = s2;
       const v2 = getLength([r1 + 1, l2 - 1]);
-      this.average.bare = (v1 + occupy) / 2;
+      this.average.bare = (v1 + bare) / 2;
+    }
+  }
+
+  updateAverageMiddle(i, sections) {
+    const s1 = sections[i];
+    const s2 = sections[i - 1];
+    const v1 = getLength(s1);
+    const {
+      average: {
+        bare,
+        occupy,
+      },
+    } = this;
+    this.average.occupy = (v1 + occupy) / 2;
+    if (s2 !== undefined) {
+      const [l1, r1] = s1;
+      const [l2, r2] = s2;
+      const v2 = getLength([r1 + 1, l2 - 1]);
+      this.average.bare = (v1 + bare) / 2;
     }
   }
 
@@ -500,7 +519,7 @@ class Table {
           if (o !== undefined && o.type === 's') {
             const { sections, } = o;
             sections.push(section);
-            this.updateAverage(section, sections);
+            this.updateAverageLast(section, sections);
             o.chaotic = true;
           } else {
             this.hash[k] = {
@@ -699,7 +718,7 @@ class Table {
       const multily = bare * l;
       if (multily >= 2.8 && l / multily >= 28) {
         const { jumps, } = this.hash[filter];
-        while (true) {
+        while (index >= 0) {
           if (jumps[index] !== undefined && (datas[index - 1] !== undefined && datas[index - 1][filter] !== undefined)) {
             const [j, i] = jumps[index];
             pointer = i;
@@ -716,7 +735,7 @@ class Table {
         let { jumps, sections, } = this.hash[filter];
         if (sections.length === 0) {
           sections.push(section);
-          this.updateAverage(section, sections);
+          this.updateAverageLast(section, sections);
           ans.push(section);
           const [l, r] = section;
           this.hash[filter].jumps[l] = [r, 0];
@@ -737,7 +756,8 @@ class Table {
                 pointer = 0;
                 const section = [index, r];
                 ans.push(section);
-                sections.splice(0, 1, section);
+                sections.splice(1, 0, section);
+                this.updateAverageMiddle(1, sections);
                 jumps[index] = [r, 0];
                 index = r + 1;
                 break;
@@ -751,7 +771,7 @@ class Table {
               const section = [index, right];
               ans.push(section);
               this.hash[filter].sections.push(section);
-              this.updateAverage(section, sections);
+              this.updateAverageLast(section, sections);
               return ans;
             }
             return ans;
@@ -765,7 +785,8 @@ class Table {
               index = l2;
             }
             ans.push(section);
-            sections.splice(0, section);
+            sections.splice(i + 1, 0, section);
+            this.updateAverageMiddle(i + 1, sections);
             jumps[r1 + 1] = [l2 - 1, i];
             break;
           }
