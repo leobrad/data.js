@@ -107,7 +107,10 @@ class Table {
     this.tb = tb;
     this.hash = {};
     this.datas = [];
-    this.average = 0;
+    this.average = {
+      bare: 0,
+      occupy: 0,
+    };
     this.options = options;
     const {
       options: {
@@ -230,9 +233,23 @@ class Table {
   }
 
   updateAverage(section, sections) {
-    const v = getLength(sections[sections.length - 1]);
-    const { average, } = this;
-    this.average = (v + average) / 2;
+    const { length, } = sections;
+    const s1 = sections[length - 1];
+    const s2 = sections[length - 1];
+    const v1 = getLength(s1);
+    const {
+      average: {
+        bare,
+        occupy,
+      },
+    } = this;
+    this.average.occupy = (v1 + occupy) / 2;
+    if (s2 !== undefined) {
+      const [l1, r1] = s1;
+      const [l2, r2] = s2;
+      const v2 = getLength([r1 + 1, l2 - 1]);
+      this.average.bare = (v1 + occupy) / 2;
+    }
   }
 
   shadowCopyRecord(l, r, o, ans, datas) {
@@ -281,11 +298,20 @@ class Table {
       sections = this.hash[filter].sections;
       let i = 0;
       while (sections[i + 1] !== undefined) {
-        const { average, } = this;
+        const {
+          average: {
+            bare,
+            occupy,
+          },
+        } = this;
+        const [l1, r1] = section[i];
+        const [l2, r2] = section[i + 1];
         const v1 = getLength(section[i]);
-        this.average = (v1 + average) / 2;
-        const v2 = getLength(section[i]);
-        this.average = (v2 + average) / 2;
+        this.average.occupy = (v1 + occupy) / 2;
+        const v2 = getLength(section[i + 1]);
+        this.average.occupy = (v2 + occupy) / 2;
+        const v3 = getLength([r1 + 1, l2 - 1]);
+        this.average.bare = (v3 + occupy) / 2;
         if (r1 >= l2 - 1) {
           const min = Math.min(l1, l2);
           const max = Math.max(r1, r2);
@@ -642,8 +668,12 @@ class Table {
     this.concatSections(filter);
     if (datas[index] !== undefined && datas[index][filter] !== undefined) {
       const l = getLength([0, index]);
-      const { average, } = this;
-      const multily = average * l;
+      const {
+        average: {
+          occupy,
+        },
+      } = this;
+      const multily = occupy * l;
       if (multily >= 2.8 && l / multily >= 28) {
         const { jumps, } = this.hash[filter];
         while (true) {
@@ -656,6 +686,29 @@ class Table {
             index -= 1;
           }
         }
+      }
+    }
+    if (datas[index] === undefined || datas[index][filter] === undefined) {
+      const i = index;
+      const l = getLength([0, index]);
+      const {
+        average: {
+          bare,
+        },
+      } = this;
+      const multily = bare * l;
+      if (multily >= 2.8 && l / multily >= 28) {
+        const { jumps, } = this.hash[filter];
+        while (true) {
+          if (jumps[index] !== undefined && (datas[index - 1] !== undefined && datas[index - 1][filter] !== undefined)) {
+            const [j, i] = jumps[index];
+            pointer = i;
+            break;
+          } else {
+            index -= 1;
+          }
+        }
+        index = i;
       }
     }
     while (index <= right) {
