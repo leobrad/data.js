@@ -12,7 +12,7 @@ function getTuple(obj) {
   return Object.keys(obj).filter(k => k !== 'id').map((k) => k + ' = ' + formateVal(obj[k])).join(',');
 }
 
-export default function updateData(connection, tb, obj) {
+function updateRecordInMysql(connection, tb, obj) {
   return new Promise((resolve, reject) => {
     const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj) + generateWhere(tb, obj.id);
     connection.query(sql, (error, results) => {
@@ -24,4 +24,19 @@ export default function updateData(connection, tb, obj) {
       }
     );
   });
+}
+
+function updateRecordInPostgresql(connection, tb, obj) {
+  return connection.then((conn) => {
+    const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj) + generateWhere(tb, obj.id);
+    return conn.query(sql).then((res) => res.rows);
+  });
+}
+
+export default function updateRecord(type, connection, tb, obj) {
+  if (type === 'mysql') {
+    return updateRecordInMysql(connection, tb, obj);
+  } else {
+    return updateRecordInPostgresql(connection, tb, obj);
+  }
 }

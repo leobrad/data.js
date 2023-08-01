@@ -1,6 +1,4 @@
-import global from '~/obj/global';
-
-export default function deleteData(connection, tb, id) {
+function deleteRecordInMysql(connection, tb, id) {
   return new Promise((resolve, reject) => {
     const sql = 'DELETE FROM ' + tb + ' WHERE id=' + id;
     connection.query(sql, (err, results) => {
@@ -12,4 +10,18 @@ export default function deleteData(connection, tb, id) {
       }
     );
   });
+}
+
+function deleteRecordInPostgresql(connection, tb, id) {
+  return connection.then((conn) => {
+    return connection.query('DELETE FROM ' + tb + ' WHERE id=' + id).then((res) => res.rows);
+  });
+}
+
+export default function deleteRecord(type, connection, tb, id) {
+  if (type === 'mysql') {
+    return deleteRecordInMysql(connection, tb, id);
+  } else {
+    return deleteRecordInPostgresql(connection, tb, id);
+  }
 }

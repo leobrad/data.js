@@ -13,6 +13,7 @@ const connection = mysql.createPool({
 });
 
 const options = {
+  type: 'mysql',
   connection,
   recordUseCount: true,
 };

@@ -1,5 +1,3 @@
-import global from '~/obj/global';
-
 function getLimit(section) {
   if (section !== undefined) {
     const limit = section.filter((e) => e !== undefined).map((k, i) => {
@@ -20,7 +18,7 @@ function getLimit(section) {
   }
 }
 
-export default function selectData(connection, tb, section, filters) {
+function selectRecordInMysql(connection, tb, section, filters) {
   return new Promise((resolve, reject) => {
     let sql;
     if (filters === undefined) {
@@ -37,4 +35,24 @@ export default function selectData(connection, tb, section, filters) {
       }
     );
   });
+}
+
+function selectRecordInPostgresql(connection, tb, section, filters) {
+  return connection.then((conn) => {
+    let sql;
+    if (filters === undefined) {
+      sql = 'SELECT * from ' + tb + getLimit(section);
+    } else {
+      sql = 'SELECT ' + filters.join(',') + ' from ' + tb + getLimit(section);
+    }
+    return conn.query(sql).then((res) => res.rows);
+  });
+}
+
+export default function selectRecord(type, connection, tb, section, filters) {
+  if (type === 'mysql') {
+    return selectRecordInMysql(connection, tb, section, filters);
+  } else {
+    return selectRecordInPostgresql(connection, tb, section, filters);
+  }
 }

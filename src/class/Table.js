@@ -289,13 +289,14 @@ class Table {
   async cacheSections(sections, datas, filter) {
     const {
       options: {
+        type,
         connection,
       },
       tb,
     } = this;
     for (let i = 0; i < sections.length; i += 1) {
       const s = sections[i];
-      const records = await selectRecord(connection, tb, s, [filter]);
+      const records = await selectRecord(type, connection, tb, s, [filter]);
       const [l, r] = s;
       for (let i = 0; i <= r - l; i += 1) {
         if (datas[l + i] === undefined) {
@@ -414,33 +415,35 @@ class Table {
   async insert(cnt) {
     const {
       options: {
+        type,
         connection,
       },
       tb,
     } = this;
     if (Array.isArray(cnt)) {
-      await insertRecord(connection, tb, cnt);
+      await insertRecord(type, connection, tb, cnt);
     } else {
-      await insertRecord(connection, tb, [cnt])
+      await insertRecord(type, connection, tb, [cnt])
     }
   }
 
   async deleteExchange(id, total) {
     const {
       options: {
+        type,
         connection,
       },
     } = this;
     if (id === total - 1) {
       const { tb, } = this;
-      await deleteRecord(connection, tb, id);
+      await deleteRecord(type, connection, tb, id);
     } else {
       const { tb, } = this;
-      const records = await selectRecord(connection, tb, [total - 1, total - 1]);
+      const records = await selectRecord(type, connection, tb, [total - 1, total - 1]);
       const record = records[0];
-      await deleteRecord(connection, tb, total - 1);
+      await deleteRecord(type, connection, tb, total - 1);
       record.id = id;
-      await updateRecord(connection, tb, record);
+      await updateRecord(type, connection, tb, record);
     }
   }
 
@@ -480,35 +483,38 @@ class Table {
   async delete(id) {
     const {
       options: {
+        type,
         connection,
       },
       tb,
     } = this;
-    await deleteRecord(connection, tb, id);
+    await deleteRecord(type, connection, tb, id);
     this.deleteDataById(id);
   }
 
   async update(obj) {
     const {
       options: {
+        type,
         connection,
       },
       tb,
     } = this;
-    await updateRecord(connection, tb, obj);
+    await updateRecord(type, connection, tb, obj);
     this.deleteDataById(obj.id);
   }
 
   async select(section, filters, arrange) {
     const {
       options: {
+        type,
         connection,
       },
       datas, tb,
     } = this;
     let records;
     if (filters === undefined) {
-      records = await selectRecord(connection, tb, section);
+      records = await selectRecord(type, connection, tb, section);
       if (Array.isArray(records) && records.length > 1) {
         const [l, r] = section;
         for (let i = l; i <= r; i += 1) {
