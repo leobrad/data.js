@@ -6,11 +6,21 @@ services:
     environment:
       MYSQL_HOST: localhost
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: data.js
+      MYSQL_DATABASE: recordsjs
     ports:
       - 3306:3306
     volumes:
       - ./docker-entrypoint-initdb.d/:/docker-entry-point-initdb.d/
+  postgresql:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: recordsjs
+    ports:
+      - 5432:5432
+    volumes:
+      - ./master/data:/docker-entry-point-initdb.d/datajs.sql
   adminer:
     image: adminer
     restart: always
