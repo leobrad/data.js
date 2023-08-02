@@ -3,7 +3,7 @@ import mysqlOptions from '~/obj/mysqlOptions';
 
 class MysqlUsers extends Table {
   constructor() {
-    super('user', mysqlOptions);
+    super('users', mysqlOptions);
   }
 }
 

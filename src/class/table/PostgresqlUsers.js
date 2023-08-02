@@ -3,7 +3,7 @@ import postgresqlOptions from '~/obj/postgresqlOptions';
 
 class PostgresqlUsers extends Table {
   constructor() {
-    super('user', postgresqlOptions);
+    super('users', postgresqlOptions);
   }
 }
 

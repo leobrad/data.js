@@ -7,18 +7,18 @@ SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
 SET NAMES utf8mb4;
 
-DROP TABLE IF EXISTS `user`;
-CREATE TABLE `user` (
-  `id` bigint NOT NULL,
-  `name` text,
-  `age` int DEFAULT NULL,
-  `gender` int DEFAULT NULL,
-  `city` text,
-  `country` text,
-  PRIMARY KEY (`id`)
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  id bigint NOT NULL,
+  name text,
+  age int DEFAULT NULL,
+  gender int DEFAULT NULL,
+  city text,
+  country text,
+  PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-INSERT INTO `user` (`id`, `name`, `age`, `gender`, `city`, `country`) VALUES
+INSERT INTO `users` (`id`, `name`, `age`, `gender`, `city`, `country`) VALUES
 (0,	'james',	21,	1,	'sitka',	'america'),
 (1,	'ovlier',	22,	1,	'clifton',	'america'),
 (2,	'thomas',	23,	1,	'florence',	'america'),

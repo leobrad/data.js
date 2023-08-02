@@ -15,12 +15,13 @@ services:
     image: postgres
     restart: always
     environment:
+      POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       POSTGRES_DB: recordsjs
     ports:
       - 5432:5432
     volumes:
-      - ./master/data:/docker-entry-point-initdb.d/datajs.sql
+      - ./docker-entrypoint-initdb.d/datajs.sql:/master/data/
   adminer:
     image: adminer
     restart: always

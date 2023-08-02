@@ -4,7 +4,7 @@ const connection = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: 'password',
-  database: 'datajs-test',
+  database: 'recordsjs',
   waitForConnections: true,
   connectionLimit: 10,
   maxIdle: 10,
