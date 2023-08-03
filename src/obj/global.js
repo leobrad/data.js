@@ -1,5 +1,5 @@
 const global = {
-  user: {},
+  users: {},
 };
 
 export default global;

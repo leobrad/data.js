@@ -28,7 +28,6 @@ function updateRecordInMysql(connection, tb, obj) {
 
 function updateRecordInPostgresql(connection, tb, obj) {
   return connection.then((conn) => {
-    console.log(getTuple(obj, 'single'));
     const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj, 'single') + generateWhere(tb, obj.id);
     return conn.query(sql).then((res) => res.rows);
   });
