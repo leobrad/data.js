@@ -4,12 +4,12 @@ function getCols(obj) {
   return formateBracket(Object.keys(obj));
 }
 
-function getVals(obj) {
+function getVals(obj, type) {
   return formateBracket(
     Object.keys(obj).map((k) => {
       const val = obj[k];
       if (typeof val === 'string') {
-        return formateVal(val);
+        return formateVal(val, type);
       } else {
         return val;
       }
@@ -22,9 +22,8 @@ function formateBracket(list) {
 
 function insertRecordInMysql(connection, tb, objs) {
   return new Promise((resolve, reject) => {
-    const values = objs.map((o) => getVals(o)).join(',');
+    const values = objs.map((o) => getVals(o, 'double')).join(',');
     const sql = 'INSERT INTO ' + tb + getCols(objs[0]) + ' VALUES ' + values;
-    console.log(sql);
     connection.query(sql, (err, results) => {
         if (err) {
           reject(err);
@@ -38,9 +37,8 @@ function insertRecordInMysql(connection, tb, objs) {
 
 function insertRecordInPostgresql(connection, tb, objs) {
   return connection.then((conn) => {
-    const values = objs.map((o) => getVals(o)).join(',');
+    const values = objs.map((o) => getVals(o, 'single')).join(',');
     const sql = 'INSERT INTO ' + tb + getCols(objs[0]) + ' VALUES ' + values;
-    console.log(sql);
     return conn.query(sql).then((res) => res.rows);
   });
 }

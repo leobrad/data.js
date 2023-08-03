@@ -14,7 +14,7 @@ function deleteRecordInMysql(connection, tb, id) {
 
 function deleteRecordInPostgresql(connection, tb, id) {
   return connection.then((conn) => {
-    return connection.query('DELETE FROM ' + tb + ' WHERE id=' + id).then((res) => res.rows);
+    return conn.query('DELETE FROM ' + tb + ' WHERE id=' + id).then((res) => res.rows);
   });
 }
 

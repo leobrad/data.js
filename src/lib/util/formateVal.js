@@ -1,10 +1,14 @@
-export default function formateString(str) {
-  return '"' + str + '"';
+function formateString(str, type) {
+  if (type === 'double') {
+    return '"' + str + '"';
+  } else {
+    return "'" + str + "'";
+  }
 }
 
-function formaeVal(val) {
+export default function formateVal(val, type) {
   if (typeof val === 'string') {
-    return formateString(val);
+    return formateString(val, type);
   } else {
     return val;
   }

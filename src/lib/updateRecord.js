@@ -8,13 +8,13 @@ function generateWhere(tb, id) {
   }
 }
 
-function getTuple(obj) {
-  return Object.keys(obj).filter(k => k !== 'id').map((k) => k + ' = ' + formateVal(obj[k])).join(',');
+function getTuple(obj, type) {
+  return Object.keys(obj).filter(k => k !== 'id').map((k) => k + ' = ' + formateVal(obj[k], type)).join(',');
 }
 
 function updateRecordInMysql(connection, tb, obj) {
   return new Promise((resolve, reject) => {
-    const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj) + generateWhere(tb, obj.id);
+    const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj, 'double') + generateWhere(tb, obj.id);
     connection.query(sql, (error, results) => {
         if (error) {
           reject(error);
@@ -28,7 +28,8 @@ function updateRecordInMysql(connection, tb, obj) {
 
 function updateRecordInPostgresql(connection, tb, obj) {
   return connection.then((conn) => {
-    const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj) + generateWhere(tb, obj.id);
+    console.log(getTuple(obj, 'single'));
+    const sql = 'UPDATE ' + tb + ' SET ' + getTuple(obj, 'single') + generateWhere(tb, obj.id);
     return conn.query(sql).then((res) => res.rows);
   });
 }
