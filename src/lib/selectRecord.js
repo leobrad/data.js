@@ -51,7 +51,7 @@ function selectRecordInPostgresql(connection, tb, section, filters) {
     if (filters === undefined) {
       sql = 'SELECT * FROM ' + tb + ' ORDER BY id ' + getOffsetLimit(section);
     } else {
-      sql = 'SELECT ' + filters.join(',') + ' FROM ' + tb +  + ' ORDER BY id ' + getOffsetLimit(section);
+      sql = 'SELECT ' + filters.join(',') + ' FROM ' + tb +  ' ORDER BY id ' + getOffsetLimit(section);
     }
     return conn.query(sql).then((res) => res.rows);
   });

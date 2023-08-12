@@ -298,11 +298,13 @@ class Table {
       const s = sections[i];
       const records = await selectRecord(type, connection, tb, s, [filter]);
       const [l, r] = s;
-      for (let i = 0; i <= r - l; i += 1) {
-        if (datas[l + i] === undefined) {
-          datas[l + i] = {};
+      if (records.length > 0) {
+        for (let i = 0; i <= r - l; i += 1) {
+          if (datas[l + i] === undefined) {
+            datas[l + i] = {};
+          }
+          datas[l + i][filter] = records[i][filter];
         }
-        datas[l + i][filter] = records[i][filter];
       }
     }
   }
@@ -348,18 +350,19 @@ class Table {
   }
 
   arrangeRecords(datas, section, filters) {
-    const hash = {};
+    const h = {};
     const ans = [];
     filters.forEach((f) => {
-      hash[f] = true;
+      h[f] = true;
     });
     const min = {};
-    Object.keys(this.hash).forEach((k) => {
-      if (hash[k] === undefined) {
-        if (this.hash[k].type === 's') {
+    const { hash, } = this;
+    Object.keys(hash).forEach((k) => {
+      if (h[k] === undefined) {
+        if (hash[k].type === 's') {
           min[k] = true;
         } else {
-          min[this.hash[k].pointer] = true;
+          min[hash[k].pointer] = true;
         }
       }
     });
@@ -367,7 +370,7 @@ class Table {
     const [l1, r1] = section;
     Object.keys(min).forEach((k) => {
       this.concatSections(k);
-      const { sections, } = this.hash[k];
+      const { sections, } = hash[k];
       sections.forEach((s) => {
         const [l2, r2] = s;
         if (!(r2 < l1 || l2 > r1)) {
@@ -437,6 +440,7 @@ class Table {
     if (id === total - 1) {
       const { tb, } = this;
       await deleteRecord(type, connection, tb, id);
+      this.deleteDataById(id);
     } else {
       const { tb, } = this;
       const records = await selectRecord(type, connection, tb, [total - 1, total - 1]);
@@ -444,6 +448,7 @@ class Table {
       await deleteRecord(type, connection, tb, total - 1);
       record.id = id;
       await updateRecord(type, connection, tb, record);
+      this.deleteDataById(total - 1);
     }
   }
 
@@ -451,21 +456,23 @@ class Table {
     const { hash, datas, } = this;
     if (datas[id] !== undefined) {
       Object.keys(datas[id]).forEach((k) => {
-        const { sections, jumps, } = hash[k];
-        sections.forEach((s, i) => {
-          const [l, r] = s;
-          if (id === l) {
-            sections[i] = [l + 1, r];
-          }
-          if (id === r) {
-            sections[i] = [l, r - 1];
-          }
-          if (id > l && id < r) {
-            sections.splice(i, 1, [l, id - 1], [id + 1, r]);
-            jumps[l] = [id - 1, i];
-            jumps[id + 1] = [r, i + 1];
-          }
-        });
+        if (hash[k].type === 's') {
+          const { sections, jumps, } = hash[k];
+          sections.forEach((s, i) => {
+            const [l, r] = s;
+            if (id === l) {
+              sections[i] = [l + 1, r];
+            }
+            if (id === r) {
+              sections[i] = [l, r - 1];
+            }
+            if (id > l && id < r) {
+              sections.splice(i, 1, [l, id - 1], [id + 1, r]);
+              jumps[l] = [id - 1, i];
+              jumps[id + 1] = [r, i + 1];
+            }
+          });
+        }
       });
       datas[id] = undefined;
       const {
@@ -514,148 +521,131 @@ class Table {
     } = this;
     let records;
     if (filters === undefined) {
-      records = await selectRecord(type, connection, tb, section);
-      if (Array.isArray(records) && records.length > 1) {
-        const [l, r] = section;
-        for (let i = l; i <= r; i += 1) {
-          datas[i] = records[i - l];
+      if (this.columns === undefined) {
+        records = await selectRecord(type, connection, tb, [section[0], section[0]]);
+        this.columns = Object.keys(records[0]);
+      }
+      filters = this.columns;
+    }
+    const set = {};
+    const source = {};
+    filters.forEach((f, i) => {
+      const { hash, } = this;
+      if (hash[f] === undefined) {
+        if (set['*null'] === undefined) {
+          set['*null'] = [];
         }
-        Object.keys(records[0]).forEach((k) => {
-          const o = this.hash[k];
-          if (o !== undefined && o.type === 's') {
-            const { sections, } = o;
-            sections.push(section);
-            this.updateAverageLast(section, sections);
-            o.chaotic = true;
-          } else {
-            this.hash[k] = {
-              type: 's',
-              sections: [section],
-              jumps: [],
-              chaotic: false,
-            };
-            const [l, r] = section;
-            const { jumps, } = this.hash[k];
-            jumps[l] = [r, 0];
+        set['*null'].push(f);
+      } else if (hash[f].type === 'p') {
+        const pointer = hash[f].pointer;
+        if (set[pointer] === undefined) {
+          set[pointer] = [];
+        }
+        set[pointer].push(f);
+      } else {
+        if (set['*rest'] === undefined) {
+          set['*rest'] = [];
+        }
+        set['*rest'].push(f);
+      }
+      const obj = hash[f];
+      if (obj && obj.type === 's') {
+        source[f] = true;
+      }
+    });
+    const keys = Object.keys(set);
+    const { hash, } = this;
+    for (let i = 0; i < keys.length; i += 1) {
+      const k = keys[i];
+      if (k === '*null') {
+        hash[set[k][0]] = {
+          type: 's',
+          jumps: [],
+          sections: [],
+          chaotic: false,
+        };
+        for (let j = 1; j < set[k].length; j += 1) {
+          hash[set[k][j]] = {
+            type: 'p',
+            pointer: set[k][0],
+          };
+        }
+        const sections = this.calcSections(section, datas, set[k][0]);
+        for (let j = 0; j < set[k].length; j += 1) {
+          const f = set[k][j];
+          await this.cacheSections(sections, datas, f);
+        }
+      } else if (k === '*rest') {
+        const h = {};
+        set[k].forEach((e) => {
+          h[e] = true;
+        });
+        const lists = {};
+        const { hash, } = this;
+        Object.keys(hash).forEach((e) => {
+          const o = hash[e];
+          const { pointer: p, } = o;
+          if (o.type === 'p' && h[p] === true) {
+            if (lists[p] === undefined) {
+              lists[p] = [];
+            }
+            lists[p].push(e);
           }
         });
-      }
-    } else {
-      const hash = {};
-      const source = {};
-      filters.forEach((f, i) => {
-        if (this.hash[f] === undefined) {
-          if (hash['*null'] === undefined) {
-            hash['*null'] = [];
-          }
-          hash['*null'].push(f);
-        } else if (this.hash[f].type === 'p') {
-          const pointer = this.hash[f].pointer;
-          if (hash[pointer] === undefined) {
-            hash[pointer] = [];
-          }
-          hash[pointer].push(f);
-        } else {
-          if (hash['*rest'] === undefined) {
-            hash['*rest'] = [];
-          }
-          hash['*rest'].push(f);
-        }
-        if (this.hash[f] && this.hash[f].type === 's') {
-          source[f] = true;
-        }
-      });
-      const keys = Object.keys(hash);
-      for (let i = 0; i < keys.length; i += 1) {
-        const k = keys[i];
-        if (k === '*null') {
-          this.hash[hash[k][0]] = {
-            type: 's',
-            jumps: [],
-            sections: [],
-            chaotic: false,
-          };
-          for (let j = 1; j < hash[k].length; j += 1) {
-            this.hash[hash[k][j]] = {
-              type: 'p',
-              pointer: hash[k][0],
-            };
-          }
-          const sections = this.calcSections(section, datas, hash[k][0]);
-          for (let j = 0; j < hash[k].length; j += 1) {
-            const f = hash[k][j];
+        for (let j = 0; j < set[k].length; j += 1) {
+          const f = set[k][j];
+          if (set[f] === undefined) {
+            const list = lists[f];
+            if (Array.isArray(list)) {
+              const { hash, } = this;
+              const { sections: s, jumps: j, chaotic, } = hash[f];
+              hash[list[0]] = {
+                type: 's',
+                jumps: j.slice(0, j.length),
+                sections: s.slice(0, s.length),
+                chaotic,
+              };
+              for (let i = 1; i < list.length; i += 1) {
+                hash[list[i]] = {
+                  type: 'p',
+                  pointer: list[0],
+                };
+              }
+            }
+            const sections = this.calcSections(section, datas, f);
             await this.cacheSections(sections, datas, f);
           }
-        } else if (k === '*rest') {
-          const h = {};
-          hash[k].forEach((e) => {
-            h[e] = true;
-          });
-          const lists = {};
-          Object.keys(this.hash).forEach((e) => {
-            const o = this.hash[e];
-            const { pointer: p, } = o;
-            if (o.type === 'p' && h[p] === true) {
-              if (lists[p] === undefined) {
-                lists[p] = [];
-              }
-              lists[p].push(e);
-            }
-          });
-          for (let j = 0; j < hash[k].length; j += 1) {
-            const f = hash[k][j];
-            if (hash[f] === undefined) {
-              const list = lists[f];
-              if (Array.isArray(list)) {
-                const { sections: s, jumps: j, chaotic, } = this.hash[f];
-                this.hash[list[0]] = {
-                  type: 's',
-                  jumps: j.slice(0, j.length),
-                  sections: s.slice(0, s.length),
-                  chaotic,
-                };
-                for (let i = 1; i < list.length; i += 1) {
-                  this.hash[list[i]] = {
-                    type: 'p',
-                    pointer: list[0],
-                  };
-                }
-              }
-              const sections = this.calcSections(section, datas, f);
-              await this.cacheSections(sections, datas, f);
-            }
+        }
+      } else {
+        if (k !== '*rest' && source[hash[set[k][0]].pointer] === undefined) {
+          const p = hash[set[k][0]].pointer;
+          const { sections: s, jumps: j, chaotic, } = this.hash[p];
+          hash[set[k][0]] = {
+            type: 's',
+            jumps: j.slice(0, j.length),
+            sections: s.slice(0, s.length),
+            chaotic,
+          };
+          for (let j = 1; j < set[k].length; j += 1) {
+            hash[set[k][j]] = {
+              type: 'p',
+              pointer: set[k][0],
+            };
+          }
+          const sections = this.calcSections(section, datas, set[k][0]);
+          await this.cacheSections(sections, datas, set[k][0]);
+          for (let j =0; j < set[k].length; j += 1) {
+            const f = set[k][j];
+            await this.cacheSections(sections, datas, f);
           }
         } else {
-          if (k !== '*rest' && source[this.hash[hash[k][0]].pointer] === undefined) {
-            const p = this.hash[hash[k][0]].pointer;
-            const { sections: s, jumps: j, chaotic, } = this.hash[p];
-            this.hash[hash[k][0]] = {
-              type: 's',
-              jumps: j.slice(0, j.length),
-              sections: s.slice(0, s.length),
-              chaotic,
-            };
-            for (let j = 1; j < hash[k].length; j += 1) {
-              this.hash[hash[k][j]] = {
-                type: 'p',
-                pointer: hash[k][0],
-              };
-            }
-            const sections = this.calcSections(section, datas, hash[k][0]);
-            await this.cacheSections(sections, datas, hash[k][0]);
-            for (let j =0; j < hash[k].length; j += 1) {
-              const f = hash[k][j];
+          if (k !== '*rest') {
+            const s = this.hash[set[k][0]].pointer;
+            const sections = this.calcSections(section, datas, s);
+            await this.cacheSections(sections, datas, s);
+            for (let j = 0; j < set[k].length; j += 1) {
+              const f = set[k][j];
               await this.cacheSections(sections, datas, f);
-            }
-          } else {
-            if (k !== '*rest') {
-              const s = this.hash[hash[k][0]].pointer;
-              const sections = this.calcSections(section, datas, s);
-              await this.cacheSections(sections, datas, s);
-              for (let j = 0; j < hash[k].length; j += 1) {
-                const f = hash[k][j];
-                await this.cacheSections(sections, datas, f);
-              }
             }
           }
         }
@@ -744,7 +734,7 @@ class Table {
           this.updateAverageLast(section, sections);
           ans.push(section);
           const [l, r] = section;
-          this.hash[filter].jumps[l] = [r, 0];
+          jumps[l] = [r, 0];
           return ans;
         }
         this.concatSections(filter);
@@ -776,7 +766,7 @@ class Table {
               pointer = sections.length - 1;
               const section = [index, right];
               ans.push(section);
-              this.hash[filter].sections.push(section);
+              sections.push(section);
               this.updateAverageLast(section, sections);
               return ans;
             }

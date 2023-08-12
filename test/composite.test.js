@@ -29,13 +29,13 @@ describe('[class] Users composite test case;', () => {
     const global_users_tb = global.users.tb;
     await global_users_tb.delete(19);
     const users = await global_users_tb.select([19, 19]);
-    expect(JSON.stringify(users)).toMatch('[]');
+    expect(JSON.stringify(users)).toMatch('[null]');
   });
   test('delete exchange arbitrarliy record;', async () => {
     const global_users_tb = global.users.tb;
     await global_users_tb.deleteExchange(15, 19);
     const users = await global_users_tb.select([18, 18]);
-    expect(JSON.stringify(users)).toMatch('[]');
+    expect(JSON.stringify(users)).toMatch('[null]');
   });
 });
 
