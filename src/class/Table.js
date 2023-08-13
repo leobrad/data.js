@@ -56,7 +56,6 @@ function concatSections(sections) {
   return sections;
 }
 
-
 function radixSort(list) {
   list = list.map((e) => [e[0], e]);
   const bucket = new Array(10);
@@ -522,8 +521,43 @@ class Table {
     let records;
     if (filters === undefined) {
       if (this.columns === undefined) {
-        records = await selectRecord(type, connection, tb, [section[0], section[0]]);
-        this.columns = Object.keys(records[0]);
+        const index = section[0];
+        records = await selectRecord(type, connection, tb, [index, index]);
+        const record = records[0];
+        this.columns = [];
+        Object.keys(record).forEach((k, i) => {
+          this.columns[i] = k;
+        });
+        const [l] = section;
+        this.datas[l] = record;
+        const { hash, } = this;
+        let first;
+        Object.keys(records[0]).forEach((k, i) => {
+          const o = hash[k];
+          if (o !== undefined && o.type === 's') {
+            const { sections, } = o;
+            sections.push(section);
+            this.updateAverageLast(section, sections);
+            o.chaotic = true;
+          } else {
+            if (i === 0) {
+              hash[k] = {
+                type: 's',
+                sections: [section],
+                jumps: [],
+                chaotic: false,
+              };
+              const { jumps, } = hash[k];
+              jumps[l] = [l, 1];
+              first = k;
+            } else {
+              hash[k] = {
+                type: 'p',
+                pointer: first,
+              };
+            }
+          }
+        });
       }
       filters = this.columns;
     }
@@ -650,7 +684,7 @@ class Table {
           }
         }
       }
-      if (arrange === true) {
+      if (arrange === true && filters !== undefined) {
         records = this.arrangeRecords(datas, section, filters);
       } else {
         const {

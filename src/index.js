@@ -13,15 +13,16 @@ async function main() {
     { id: 19, name: 'eleanor', age: 83, gender: 0, city: 'tuscaloosa', country: 'america', },
   ]);
   let users = await global_users_tb.select([15, 19]);
-  await global_users_tb.update({ id: 16, age: 18, });
-  users = await global_users_tb.select([16, 16]);
-  await global_users_tb.delete(19);
-  users = await global_users_tb.select([19, 19]);
-  await global_users_tb.deleteExchange(15, 19);
-  users = await global_users_tb.select([18, 18]);
-  await global_users_tb.deleteExchange(16, 18);
-  await global_users_tb.deleteExchange(17, 17);
-  await global_users_tb.deleteExchange(18, 16);
+  console.log(users);
+  //await global_users_tb.update({ id: 16, age: 18, });
+  //users = await global_users_tb.select([16, 16]);
+  //await global_users_tb.delete(19);
+  //users = await global_users_tb.select([19, 19]);
+  //await global_users_tb.deleteExchange(15, 19);
+  //users = await global_users_tb.select([18, 18]);
+  //await global_users_tb.deleteExchange(16, 18);
+  //await global_users_tb.deleteExchange(17, 17);
+  //await global_users_tb.deleteExchange(18, 16);
 }
 
 main();
